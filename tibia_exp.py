@@ -80,4 +80,49 @@ def send_embed(exp, gain, chart_path):
             {"name": "Current EXP", "value": f"{exp:,}", "inline": True},
             {"name": "Daily gain", "value": f"{gain:+,}", "inline": True},
         ],
-        "timestamp": datetime
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+    payload = {
+        "content": "📊 Daily EXP report",
+        "embeds": [embed]
+    }
+
+    # wysyłanie z plikiem lub bez
+    if chart_path and os.path.exists(chart_path):
+        files = {"file": ("exp_chart.png", open(chart_path, "rb"), "image/png")}
+        r = requests.post(
+            WEBHOOK_URL,
+            data={"payload_json": json.dumps(payload)},
+            files=files
+        )
+    else:
+        r = requests.post(
+            WEBHOOK_URL,
+            json=payload
+        )
+
+    print("Discord status:", r.status_code, r.text)
+
+
+def main():
+    exp = fetch_exp()
+    if exp is None:
+        print("Character not found.")
+        return
+
+    history = load_history()
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+    prev_exp = history[-1]["exp"] if history else exp
+    gain = exp - prev_exp
+
+    history.append({"date": today, "exp": exp})
+    save_history(history)
+
+    chart_path = make_chart(history[-7:])
+    send_embed(exp, gain, chart_path)
+
+
+if __name__ == "__main__":
+    main()
