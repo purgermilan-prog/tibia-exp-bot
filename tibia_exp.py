@@ -3,7 +3,6 @@ import json
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-import matplotlib.pyplot as plt
 
 CHAR_NAME = "Mian Stone'arrow"
 WORLD = "Premia"
@@ -45,63 +44,20 @@ def save_history(history):
         json.dump(history, f)
 
 
-def make_chart(history):
-    if len(history) < 2:
-        return None
-
-    dates = [h["date"] for h in history]
-    exps = [h["exp"] for h in history]
-
-    plt.figure(figsize=(6, 3))
-    plt.plot(dates, exps, marker="o")
-    plt.title(f"EXP history — {CHAR_NAME}")
-    plt.xlabel("Date")
-    plt.ylabel("EXP")
-    plt.xticks(rotation=45, ha="right")
-    plt.tight_layout()
-    chart_path = "exp_chart.png"
-    plt.savefig(chart_path)
-    plt.close()
-    return chart_path
-
-
-def send_embed(exp, gain, chart_path):
+def send_text(exp, gain):
     if WEBHOOK_URL is None:
         print("No DISCORD_WEBHOOK_URL set.")
         return
 
-    color = 0x2ecc71 if gain >= 0 else 0xe74c3c
+    text = (
+        f"📊 **Daily EXP report — {CHAR_NAME}**\n"
+        f"🌍 World: {WORLD}\n\n"
+        f"🔹 Current EXP: **{exp:,}**\n"
+        f"🔹 Daily gain: **{gain:+,}**\n"
+        f"⏰ {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
+    )
 
-    embed = {
-        "title": f"Daily EXP report — {CHAR_NAME}",
-        "description": f"World: {WORLD}",
-        "color": color,
-        "fields": [
-            {"name": "Current EXP", "value": f"{exp:,}", "inline": True},
-            {"name": "Daily gain", "value": f"{gain:+,}", "inline": True},
-        ],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-    }
-
-    payload = {
-        "content": "📊 Daily EXP report",
-        "embeds": [embed]
-    }
-
-    # wysyłanie z plikiem lub bez
-    if chart_path and os.path.exists(chart_path):
-        files = {"file": ("exp_chart.png", open(chart_path, "rb"), "image/png")}
-        r = requests.post(
-            WEBHOOK_URL,
-            data={"payload_json": json.dumps(payload)},
-            files=files
-        )
-    else:
-        r = requests.post(
-            WEBHOOK_URL,
-            json=payload
-        )
-
+    r = requests.post(WEBHOOK_URL, json={"content": text})
     print("Discord status:", r.status_code, r.text)
 
 
@@ -109,20 +65,3 @@ def main():
     exp = fetch_exp()
     if exp is None:
         print("Character not found.")
-        return
-
-    history = load_history()
-    today = datetime.utcnow().strftime("%Y-%m-%d")
-
-    prev_exp = history[-1]["exp"] if history else exp
-    gain = exp - prev_exp
-
-    history.append({"date": today, "exp": exp})
-    save_history(history)
-
-    chart_path = make_chart(history[-7:])
-    send_embed(exp, gain, chart_path)
-
-
-if __name__ == "__main__":
-    main()
