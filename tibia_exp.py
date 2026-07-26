@@ -1,12 +1,9 @@
 import os
-import json
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 CHAR_NAME = "Mian Stone'arrow"
 WORLD = "Premia"
-HISTORY_FILE = "exp_history.json"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 
@@ -32,36 +29,17 @@ def fetch_exp():
     return None
 
 
-def load_history():
-    if not os.path.exists(HISTORY_FILE):
-        return []
-    with open(HISTORY_FILE, "r") as f:
-        return json.load(f)
+def main():
+    exp = fetch_exp()
 
-
-def save_history(history):
-    with open(HISTORY_FILE, "w") as f:
-        json.dump(history, f)
-
-
-def send_text(exp, gain):
-    if WEBHOOK_URL is None:
-        print("No DISCORD_WEBHOOK_URL set.")
-        return
-
-    text = (
-        f"📊 **Daily EXP report — {CHAR_NAME}**\n"
-        f"🌍 World: {WORLD}\n\n"
-        f"🔹 Current EXP: **{exp:,}**\n"
-        f"🔹 Daily gain: **{gain:+,}**\n"
-        f"⏰ {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
-    )
+    if exp is None:
+        text = f"❌ Character **{CHAR_NAME}** not found on highscores."
+    else:
+        text = f"📊 EXP for **{CHAR_NAME}** on **{WORLD}**: **{exp:,}**"
 
     r = requests.post(WEBHOOK_URL, json={"content": text})
     print("Discord status:", r.status_code, r.text)
 
 
-def main():
-    exp = fetch_exp()
-    if exp is None:
-        print("Character not found.")
+if __name__ == "__main__":
+    main()
