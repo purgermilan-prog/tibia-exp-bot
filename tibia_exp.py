@@ -113,6 +113,7 @@ def main():
     chart_path = make_chart(history[-7:])  # ostatnie 7 dni
     send_embed(exp, gain, chart_path)
 
+requests.post(WEBHOOK_URL, json={"content": "GitHub Actions działa"})
 
 if __name__ == "__main__":
     main()
