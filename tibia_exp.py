@@ -7,7 +7,6 @@ import os
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 CHAR_NAME = "Mian Stone'arrow"
-
 WORLD = "Premia"
 
 
@@ -15,43 +14,53 @@ WORLD = "Premia"
 
 def fetch_exp():
 
-    url = (
-        f"https://api.tibiadata.com/v4/highscores/"
-        f"{WORLD}/experience/all"
-    )
+    for page in range(1, 20):
 
-    print("Request:", url)
+        url = (
+            f"https://api.tibiadata.com/v4/highscores/"
+            f"{WORLD}/experience/all?page={page}"
+        )
 
-    r = requests.get(
-        url,
-        timeout=20
-    )
+        print("Checking page:", page)
 
-    print("Status:", r.status_code)
+        try:
+            r = requests.get(
+                url,
+                timeout=20
+            )
 
-    if r.status_code != 200:
-        print(r.text)
-        return None
-
-
-    data = r.json()
+        except Exception as e:
+            print("Request error:", e)
+            continue
 
 
-    highscores = (
-        data
-        .get("highscores", {})
-        .get("highscore_list", [])
-    )
+        print("Status:", r.status_code)
 
 
-    for player in highscores:
+        if r.status_code != 200:
+            continue
 
-        if player["name"].lower() == CHAR_NAME.lower():
 
-            print("FOUND:")
-            print(player)
+        data = r.json()
 
-            return player["value"]
+
+        highscores = (
+            data
+            .get("highscores", {})
+            .get("highscore_list", [])
+        )
+
+
+        print("Players:", len(highscores))
+
+
+        for player in highscores:
+
+            if player["name"].lower() == CHAR_NAME.lower():
+
+                print("FOUND:", player)
+
+                return player["value"]
 
 
     return None
@@ -67,7 +76,6 @@ def send_to_discord(message):
     if not DISCORD_WEBHOOK_URL:
         print("Missing webhook")
         return
-
 
     requests.post(
         DISCORD_WEBHOOK_URL,
@@ -91,7 +99,7 @@ def main():
     if exp is None:
 
         send_to_discord(
-            f"⚠️ Nie znaleziono {CHAR_NAME} w highscores."
+            f"⚠️ Nie znaleziono {CHAR_NAME}."
         )
 
     else:
@@ -102,7 +110,6 @@ def main():
 
 
     print("BOT END")
-
 
 
 if __name__ == "__main__":
