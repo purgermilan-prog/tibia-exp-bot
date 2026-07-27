@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import time
 from datetime import datetime, timedelta
 
 
@@ -15,85 +16,189 @@ WORLD = "Premia"
 
 SAVE_FILE = "exp_history.json"
 
+API_RETRIES = 3
+API_TIMEOUT = 20
+
 
 # ======================
 # FORMUŁA EXP TIBIA
 # ======================
 
 def exp_for_level(level):
+    """
+    Zwraca całkowity EXP wymagany na dany level.
+    """
     x = level
     return int((50 / 3) * (x**3 - 6*x**2 + 17*x - 12))
 
 
 # ======================
-# TIBIADATA
+# REQUEST Z RETRY
+# ======================
+
+def api_get(url):
+
+    for attempt in range(1, API_RETRIES + 1):
+
+        try:
+
+            r = requests.get(
+                url,
+                timeout=API_TIMEOUT,
+                headers={
+                    "User-Agent":
+                    "TibiaEXPBot/1.0"
+                }
+            )
+
+
+            if r.status_code == 200:
+                return r.json()
+
+
+            print(
+                f"API error {r.status_code}, "
+                f"attempt {attempt}/{API_RETRIES}"
+            )
+
+
+        except Exception as e:
+
+            print(
+                f"API exception: {e}, "
+                f"attempt {attempt}/{API_RETRIES}"
+            )
+
+
+        time.sleep(3)
+
+
+    return None
+
+
+
+# ======================
+# TIBIADATA CHARACTER
 # ======================
 
 def fetch_character_data():
 
     url = (
         "https://api.tibiadata.com/v4/character/"
-        + CHAR_NAME.replace(" ", "%20")
+        +
+        CHAR_NAME.replace(" ", "%20")
     )
 
-    r = requests.get(url, timeout=20)
 
-    if r.status_code != 200:
-        print("Character API error")
+    print(url)
+
+
+    data = api_get(url)
+
+
+    if not data:
         return None
 
-    return r.json()
+
+    try:
+
+        return data["character"]["character"]
 
 
+    except Exception:
+
+        return None
+
+
+
+# ======================
+# TIBIADATA HIGHSCORES
+# ======================
 
 def fetch_highscore():
 
+    print("Searching highscores...")
+
+
+    # najpierw pobieramy pierwszą stronę
     first_url = (
         f"https://api.tibiadata.com/v4/highscores/"
         f"{WORLD}/experience/all/1"
     )
 
-    r = requests.get(first_url, timeout=20)
 
-    if r.status_code != 200:
+    first = api_get(first_url)
+
+
+    if not first:
         return None
 
 
-    total_pages = (
-        r.json()
-        ["highscores"]
-        ["highscore_page"]
-        ["total_pages"]
-    )
+
+    try:
+
+        total_pages = (
+            first["highscores"]
+            ["highscore_page"]
+            ["total_pages"]
+        )
+
+    except Exception:
+
+        total_pages = 50
+
 
 
     for page in range(1, total_pages + 1):
 
-        print("Checking page:", page)
+        print(
+            f"Checking page {page}/{total_pages}"
+        )
+
 
         url = (
             f"https://api.tibiadata.com/v4/highscores/"
             f"{WORLD}/experience/all/{page}"
         )
 
-        r = requests.get(url, timeout=20)
 
-        if r.status_code != 200:
+        data = api_get(url)
+
+
+        if not data:
             continue
 
 
-        players = (
-            r.json()
-            ["highscores"]
-            ["highscore_list"]
-        )
+
+        try:
+
+            players = (
+                data["highscores"]
+                ["highscore_list"]
+            )
+
+
+        except Exception:
+
+            continue
+
 
 
         for player in players:
 
-            if player["name"].lower() == CHAR_NAME.lower():
+            if (
+                player["name"].lower()
+                ==
+                CHAR_NAME.lower()
+            ):
+
+                print(
+                    "FOUND:",
+                    player
+                )
 
                 return player
+
 
 
     return None
@@ -107,48 +212,71 @@ def fetch_highscore():
 def load_history():
 
     if not os.path.exists(SAVE_FILE):
+
         return []
 
-    with open(SAVE_FILE, "r") as f:
-        data = json.load(f)
 
-    return data.get("history", [])
+    try:
+
+        with open(
+            SAVE_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            data = json.load(f)
+
+
+        return data.get(
+            "history",
+            []
+        )
+
+
+    except Exception:
+
+        return []
 
 
 
 def save_history(history):
 
-    with open(SAVE_FILE, "w") as f:
+    with open(
+        SAVE_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
 
         json.dump(
             {
                 "history": history
             },
             f,
-            indent=2
+            indent=2,
+            ensure_ascii=False
         )
 
 
 
-def add_today(history, record):
+def update_today(history, record):
 
     today = record["date"]
 
-    for old in history:
 
-        if old["date"] == today:
+    for item in history:
 
-            old.update(record)
+        if item["date"] == today:
+
+            item.update(record)
+
             return history
+
 
 
     history.append(record)
 
     return history
-
-
-
-# ======================
+    # ======================
 # STATYSTYKI
 # ======================
 
@@ -165,12 +293,13 @@ def daily_gain(history):
 
 
 
-def period_gain(history, days):
+def gain_from_days(history, days):
 
     if len(history) < 2:
         return 0
 
-    cutoff = (
+
+    limit = (
         datetime.now()
         -
         timedelta(days=days)
@@ -179,19 +308,48 @@ def period_gain(history, days):
 
     old = None
 
-    for h in history:
 
-        if h["date"] >= cutoff:
+    for item in history:
 
-            old = h
+        if item["date"] >= limit:
+
+            old = item
             break
+
 
 
     if old is None:
         return 0
 
 
-    return history[-1]["exp"] - old["exp"]
+    return (
+        history[-1]["exp"]
+        -
+        old["exp"]
+    )
+
+
+
+def gain_current_month(history):
+
+    month = datetime.now().strftime("%Y-%m")
+
+
+    data = [
+        x for x in history
+        if x["date"].startswith(month)
+    ]
+
+
+    if len(data) < 2:
+        return 0
+
+
+    return (
+        data[-1]["exp"]
+        -
+        data[0]["exp"]
+    )
 
 
 
@@ -200,33 +358,39 @@ def average_daily(history):
     if len(history) < 2:
         return 0
 
-    first = history[0]
-    last = history[-1]
 
-    days = (
-        datetime.fromisoformat(last["date"])
-        -
-        datetime.fromisoformat(first["date"])
-    ).days
+    first = datetime.fromisoformat(
+        history[0]["date"]
+    )
+
+    last = datetime.fromisoformat(
+        history[-1]["date"]
+    )
 
 
-    if days == 0:
+    days = (last - first).days
+
+
+    if days <= 0:
         return 0
 
 
     return (
-        last["exp"] - first["exp"]
+        history[-1]["exp"]
+        -
+        history[0]["exp"]
     ) / days
 
 
 
-def month_average(history):
+def average_month(history):
 
     month = datetime.now().strftime("%Y-%m")
 
+
     data = [
-        h for h in history
-        if h["date"].startswith(month)
+        x for x in history
+        if x["date"].startswith(month)
     ]
 
 
@@ -234,14 +398,19 @@ def month_average(history):
         return 0
 
 
-    days = (
-        datetime.fromisoformat(data[-1]["date"])
-        -
-        datetime.fromisoformat(data[0]["date"])
-    ).days
+    first = datetime.fromisoformat(
+        data[0]["date"]
+    )
+
+    last = datetime.fromisoformat(
+        data[-1]["date"]
+    )
 
 
-    if days == 0:
+    days = (last - first).days
+
+
+    if days <= 0:
         return 0
 
 
@@ -253,10 +422,10 @@ def month_average(history):
 
 
 
-def biggest_day(history):
+def biggest_daily(history):
 
     best = 0
-    best_date = None
+    date = None
 
 
     for i in range(1, len(history)):
@@ -271,10 +440,55 @@ def biggest_day(history):
         if gain > best:
 
             best = gain
-            best_date = history[i]["date"]
+            date = history[i]["date"]
 
 
-    return best, best_date
+    return best, date
+
+
+
+def exp_since_start(history):
+
+    if len(history) < 2:
+        return 0
+
+
+    return (
+        history[-1]["exp"]
+        -
+        history[0]["exp"]
+    )
+
+
+
+def bot_days(history):
+
+    if not history:
+        return 0
+
+
+    start = datetime.fromisoformat(
+        history[0]["date"]
+    )
+
+
+    return (
+        datetime.now() - start
+    ).days + 1
+
+
+
+def levels_since_start(history):
+
+    if len(history) < 2:
+        return 0
+
+
+    return (
+        history[-1]["level"]
+        -
+        history[0]["level"]
+    )
 
 
 
@@ -283,7 +497,28 @@ def eta_days(exp_needed, avg):
     if avg <= 0:
         return None
 
-    return int(exp_needed / avg)
+
+    return int(
+        exp_needed / avg
+    )
+
+
+
+def eta_text(days):
+
+    if days is None:
+        return "brak danych"
+
+
+    if days == 0:
+        return "dzisiaj"
+
+
+    if days == 1:
+        return "jutro"
+
+
+    return f"{days} dni"
 
 
 
@@ -293,13 +528,45 @@ def eta_days(exp_needed, avg):
 
 def send_discord(message):
 
-    requests.post(
-        DISCORD_WEBHOOK_URL,
-        json={
-            "content": message
-        },
-        timeout=15
-    )
+    if not DISCORD_WEBHOOK_URL:
+
+        print(
+            "Brak webhooka"
+        )
+
+        print(message)
+
+        return
+
+
+
+    for attempt in range(3):
+
+        try:
+
+            r = requests.post(
+                DISCORD_WEBHOOK_URL,
+                json={
+                    "content": message
+                },
+                timeout=15
+            )
+
+
+            if r.status_code in [200,204]:
+
+                return
+
+
+        except Exception as e:
+
+            print(
+                "Discord error:",
+                e
+            )
+
+
+        time.sleep(3)
 
 
 
@@ -314,38 +581,62 @@ def main():
 
     highscore = fetch_highscore()
 
+
     if not highscore:
 
         send_discord(
-            "⚠️ Nie znaleziono postaci w highscores"
+            "⚠️ Nie znaleziono "
+            f"{CHAR_NAME}."
         )
 
         return
 
 
-    char = fetch_character_data()
+
+    character = fetch_character_data()
+
 
 
     level = highscore["level"]
+
     exp = highscore["value"]
 
+    rank = highscore["rank"]
 
-    achievements = (
-        char["character"]["achievement_points"]
-        if char else "?"
+
+
+    vocation = (
+        highscore.get(
+            "vocation",
+            "?"
+        )
     )
 
 
-    rank = highscore["rank"]
+
+    achievements = "?"
+
+
+    if character:
+
+        achievements = (
+            character.get(
+                "achievement_points",
+                "?"
+            )
+        )
+
 
 
     today = datetime.now().date().isoformat()
 
 
+
     history = load_history()
 
 
-    history = add_today(
+
+    history = update_today(
         history,
         {
             "date": today,
@@ -357,24 +648,51 @@ def main():
     )
 
 
+
     save_history(history)
+
 
 
     gain_today = daily_gain(history)
 
-    avg = average_daily(history)
+    gain_week = gain_from_days(
+        history,
+        7
+    )
 
-    avg_month = month_average(history)
+    gain_month = gain_current_month(
+        history
+    )
 
 
-    next_level_exp = exp_for_level(level + 1)
+    avg = average_daily(
+        history
+    )
 
-    missing = next_level_exp - exp
+    avg_m = average_month(
+        history
+    )
 
 
-    lvl_targets = []
 
-    for target in [650,700,750]:
+    next_level = level + 1
+
+
+    missing = (
+        exp_for_level(next_level)
+        -
+        exp
+    )
+
+
+    targets = []
+
+
+    for target in [
+        650,
+        700,
+        750
+    ]:
 
         if target > level:
 
@@ -384,57 +702,74 @@ def main():
                 exp
             )
 
+
             days = eta_days(
                 missing_target,
                 avg
             )
 
-            lvl_targets.append(
-                f"{target}: {days} dni"
-                if days else
-                f"{target}: brak danych"
+
+            targets.append(
+                f"{target}: {eta_text(days)}"
             )
 
 
 
-    best, best_date = biggest_day(history)
+    best, best_date = biggest_daily(
+        history
+    )
 
 
 
     message = f"""
-🌙 **Daily Tibia Report**
+🌙 **Daily Tibia EXP Report**
 
 🧙 **{CHAR_NAME}**
-🏹 Royal Paladin | Level **{level}**
-🏆 Rank: **#{rank}**
-⭐ Achievement points: **{achievements}**
+🏹 {vocation}
+🌎 {WORLD}
 
-✨ EXP:
+⭐ Level: **{level}**
+🏆 Rank: **#{rank}**
+🏅 Achievement points: **{achievements}**
+
+✨ Current EXP:
 **{exp:,}**
 
-📈 Dzisiaj:
+📈 Today:
 **+{gain_today:,}**
 
-📅 7 dni:
-**+{period_gain(history,7):,}**
+📅 Last 7 days:
+**+{gain_week:,}**
 
-📆 Miesiąc:
-**+{period_gain(history,30):,}**
+📆 Current month:
+**+{gain_month:,}**
 
-⏱️ Średnia ogólna:
-**{int(avg):,}/dzień**
+⏱️ Average EXP/day:
+**{int(avg):,}**
 
-⏱️ Średnia miesiąca:
-**{int(avg_month):,}/dzień**
+⏱️ Average this month:
+**{int(avg_m):,}**
 
-📉 Do levela {level+1}:
+📉 To level {next_level}:
 **{missing:,} EXP**
 
-🎯 ETA:
-{chr(10).join(lvl_targets)}
+🎯 Level prediction:
+{chr(10).join(targets)}
 
-🔥 Rekord dzienny:
-**{best:,}**
+🤖 Bot running:
+**{bot_days(history)} day**
+
+📅 Tracking since:
+**{history[0]["date"]}**
+
+🚀 EXP since start:
+**+{exp_since_start(history):,}**
+
+🆙 Levels since start:
+**+{levels_since_start(history)}**
+
+🔥 Biggest daily gain:
+**+{best:,}**
 ({best_date})
 """
 
