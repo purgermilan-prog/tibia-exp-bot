@@ -1,12 +1,9 @@
 import requests
+import json
 
-name = "Mian Stone'arrow"
-
-url = "https://api.tibiadata.com/v4/character/" + requests.utils.quote(name)
-
-print(url)
+url = "https://api.tibiadata.com/v4/highscores/Premia/experience/all"
 
 r = requests.get(url)
 
 print(r.status_code)
-print(r.text[:1000])
+print(r.text[:2000])
