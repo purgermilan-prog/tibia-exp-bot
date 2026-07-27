@@ -1,33 +1,34 @@
 import requests
 
+url = "https://api.tibiadata.com/v4/highscores/Premia/experience/all"
 
-WORLD = "Premia"
+for page in [1, 2, 12]:
 
-for page in [1, 2, 3, 10, 12]:
-
-    url = (
-        f"https://api.tibiadata.com/v4/highscores/"
-        f"{WORLD}/experience/all?page={page}"
+    r = requests.get(
+        url,
+        params={"page": page}
     )
-
-    r = requests.get(url)
 
     data = r.json()
 
-    lista = data["highscores"]["highscore_list"]
+    hs = data["highscores"]
 
-    print("PAGE:", page)
+    print("PAGE REQUEST:", page)
+    print(
+        "API PAGE:",
+        hs["highscore_page"]["current_page"]
+    )
 
     print(
         "FIRST:",
-        lista[0]["rank"],
-        lista[0]["name"]
+        hs["highscore_list"][0]["rank"],
+        hs["highscore_list"][0]["name"]
     )
 
     print(
         "LAST:",
-        lista[-1]["rank"],
-        lista[-1]["name"]
+        hs["highscore_list"][-1]["rank"],
+        hs["highscore_list"][-1]["name"]
     )
 
-    print("----------------") 
+    print("---")
