@@ -685,21 +685,20 @@ def main():
     )
 
 
-   # najbliższy milestone co 50 leveli
+     # najbliższy milestone co 50 leveli
 
-milestone = ((level // 50) + 1) * 50
+    milestone = ((level // 50) + 1) * 50
 
-missing_milestone = (
-    exp_for_level(milestone)
-    -
-    exp
-)
+    missing_milestone = (
+        exp_for_level(milestone)
+        -
+        exp
+    )
 
-milestone_days = eta_days(
-    missing_milestone,
-    avg
-)
-
+    milestone_days = eta_days(
+        missing_milestone,
+        avg
+    )
 
 
     best, best_date = biggest_daily(
