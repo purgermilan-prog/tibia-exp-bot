@@ -1,45 +1,48 @@
-import os
-import re
 import requests
 from bs4 import BeautifulSoup
+import os
 
-WORLD = "Premia"
+# === KONFIGURACJA ===
+
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
 CHAR_NAME = "Mian Stone'arrow"
 
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+# === POBIERANIE EXP Z HIGHSCORES ===
 
+def fetch_exp():
 
-def fetch_exp_highscores():
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        )
+    }
 
-    target = CHAR_NAME.lower()
-
-    for page in range(1, 51):
-
-        print("Checking page:", page)
+    for page in range(10, 16):
 
         url = (
             "https://www.tibia.com/community/"
-            "?subtopic=highscores"
-            f"&world={WORLD}"
+            f"?subtopic=highscores"
+            f"&world=Premia"
             "&beprotection=-1"
             "&category=6"
             "&profession=0"
             f"&currentpage={page}"
         )
 
-        r = requests.get(url, headers=HEADERS, timeout=15)
+        r = requests.get(url, headers=headers)
 
-        print("Status:", r.status_code)
+        soup = BeautifulSoup(
+            r.text,
+            "html.parser"
+        )
 
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        rows = soup.select("table.TableContent tr")
-
-        print("Rows found:", len(rows))
+        rows = soup.select(
+            "table.TableContent tr"
+        )
 
         for row in rows:
 
@@ -48,56 +51,58 @@ def fetch_exp_highscores():
             if len(cols) < 2:
                 continue
 
-            values = [
-                c.get_text(" ", strip=True)
-                for c in cols
-            ]
+            name = cols[1].get_text(strip=True)
 
-            print(values)
+            if name == CHAR_NAME:
 
-            name = cols[1].get_text(strip=True).lower()
-
-            if name == target:
-
-                exp_text = cols[-1].get_text(strip=True)
-
-                exp = re.sub(r"\D", "", exp_text)
-
-                print("FOUND EXP:", exp)
+                exp = (
+                    cols[-1]
+                    .get_text(strip=True)
+                    .replace(",", "")
+                )
 
                 return int(exp)
 
     return None
 
 
-def send_discord(text):
 
-    print("Sending Discord:", text)
+# === DISCORD ===
 
-    if WEBHOOK_URL:
-        requests.post(
-            WEBHOOK_URL,
-            json={"content": text}
-        )
-    else:
-        print("NO WEBHOOK")
+def send_to_discord(message):
 
+    if not DISCORD_WEBHOOK_URL:
+        print("Brak webhooka Discord")
+        print(message)
+        return
+
+    requests.post(
+        DISCORD_WEBHOOK_URL,
+        json={
+            "content": message
+        }
+    )
+
+
+# === START ===
 
 def main():
 
-    print("BOT START")
+    print("Start")
 
-    exp = fetch_exp_highscores()
+    exp = fetch_exp()
 
     if exp is None:
-        text = "❌ Nie znaleziono postaci w highscores."
-    else:
-        text = (
-            f"📊 {CHAR_NAME}\n"
-            f"EXP: **{exp:,}**"
+
+        send_to_discord(
+            "⚠️ Nie znaleziono postaci w highscores."
         )
 
-    send_discord(text)
+    else:
+
+        send_to_discord(
+            f"📊 EXP {CHAR_NAME}: **{exp:,}**"
+        )
 
 
 if __name__ == "__main__":
