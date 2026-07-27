@@ -9,6 +9,9 @@ jobs:
   run-exp-bot:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -25,3 +28,14 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python tibia_exp.py
+
+      - name: Save EXP history
+        run: |
+          git config --global user.name "tibia-exp-bot"
+          git config --global user.email "tibia-exp-bot@users.noreply.github.com"
+
+          git add exp_history.json
+
+          git commit -m "Update EXP history" || exit 0
+
+          git push
