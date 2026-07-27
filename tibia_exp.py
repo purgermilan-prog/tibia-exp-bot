@@ -1,19 +1,19 @@
 import requests
 
-url = "https://api.tibiadata.com/v4/highscores/Premia/experience/all"
-
 for page in [1, 2, 12]:
 
-    r = requests.get(
-        url,
-        params={"page": page}
+    url = (
+        f"https://api.tibiadata.com/v4/highscores/"
+        f"Premia/experience/all/{page}"
     )
+
+    r = requests.get(url)
 
     data = r.json()
 
     hs = data["highscores"]
 
-    print("PAGE REQUEST:", page)
+    print("URL:", url)
     print(
         "API PAGE:",
         hs["highscore_page"]["current_page"]
