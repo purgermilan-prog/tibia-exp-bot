@@ -684,8 +684,7 @@ def main():
         exp
     )
 
-
-     # najbliższy milestone co 50 leveli
+    # najbliższy milestone co 50 leveli
 
     milestone = ((level // 50) + 1) * 50
 
@@ -704,7 +703,6 @@ def main():
     best, best_date = biggest_daily(
         history
     )
-
 
 
     message = f"""
