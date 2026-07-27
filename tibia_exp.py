@@ -1,9 +1,12 @@
 import requests
 import os
 import json
+from datetime import datetime, timedelta
 
 
-# === KONFIGURACJA ===
+# ======================
+# KONFIGURACJA
+# ======================
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
@@ -13,33 +16,56 @@ WORLD = "Premia"
 SAVE_FILE = "exp_history.json"
 
 
-# === POBIERANIE EXP Z TIBIADATA ===
+# ======================
+# FORMUŁA EXP TIBIA
+# ======================
 
-def fetch_exp():
+def exp_for_level(level):
+    x = level
+    return int((50 / 3) * (x**3 - 6*x**2 + 17*x - 12))
 
-    # pobieramy pierwszą stronę, żeby wiedzieć ile ich jest
+
+# ======================
+# TIBIADATA
+# ======================
+
+def fetch_character_data():
+
     url = (
-        f"https://api.tibiadata.com/v4/highscores/"
-        f"{WORLD}/experience/all/1"
+        "https://api.tibiadata.com/v4/character/"
+        + CHAR_NAME.replace(" ", "%20")
     )
 
     r = requests.get(url, timeout=20)
 
     if r.status_code != 200:
-        print("API ERROR:", r.text)
+        print("Character API error")
+        return None
+
+    return r.json()
+
+
+
+def fetch_highscore():
+
+    first_url = (
+        f"https://api.tibiadata.com/v4/highscores/"
+        f"{WORLD}/experience/all/1"
+    )
+
+    r = requests.get(first_url, timeout=20)
+
+    if r.status_code != 200:
         return None
 
 
-    data = r.json()
+    total_pages = (
+        r.json()
+        ["highscores"]
+        ["highscore_page"]
+        ["total_pages"]
+    )
 
-    hs = data["highscores"]
-
-    total_pages = hs["highscore_page"]["total_pages"]
-
-    print("Total pages:", total_pages)
-
-
-    # szukamy po wszystkich stronach
 
     for page in range(1, total_pages + 1):
 
@@ -67,49 +93,205 @@ def fetch_exp():
 
             if player["name"].lower() == CHAR_NAME.lower():
 
-                print("FOUND:", player)
-
-                return player["value"]
+                return player
 
 
     return None
 
 
 
-# === HISTORIA EXP ===
+# ======================
+# HISTORIA
+# ======================
 
-def load_previous_exp():
+def load_history():
 
     if not os.path.exists(SAVE_FILE):
-        return None
+        return []
 
     with open(SAVE_FILE, "r") as f:
-        return json.load(f).get("exp")
+        data = json.load(f)
+
+    return data.get("history", [])
 
 
 
-def save_exp(exp):
+def save_history(history):
 
     with open(SAVE_FILE, "w") as f:
+
         json.dump(
             {
-                "exp": exp
+                "history": history
             },
-            f
+            f,
+            indent=2
         )
 
 
 
-# === DISCORD ===
+def add_today(history, record):
 
-def send_to_discord(message):
+    today = record["date"]
 
-    print(message)
+    for old in history:
 
-    if not DISCORD_WEBHOOK_URL:
-        print("Missing webhook")
-        return
+        if old["date"] == today:
 
+            old.update(record)
+            return history
+
+
+    history.append(record)
+
+    return history
+
+
+
+# ======================
+# STATYSTYKI
+# ======================
+
+def daily_gain(history):
+
+    if len(history) < 2:
+        return 0
+
+    return (
+        history[-1]["exp"]
+        -
+        history[-2]["exp"]
+    )
+
+
+
+def period_gain(history, days):
+
+    if len(history) < 2:
+        return 0
+
+    cutoff = (
+        datetime.now()
+        -
+        timedelta(days=days)
+    ).date().isoformat()
+
+
+    old = None
+
+    for h in history:
+
+        if h["date"] >= cutoff:
+
+            old = h
+            break
+
+
+    if old is None:
+        return 0
+
+
+    return history[-1]["exp"] - old["exp"]
+
+
+
+def average_daily(history):
+
+    if len(history) < 2:
+        return 0
+
+    first = history[0]
+    last = history[-1]
+
+    days = (
+        datetime.fromisoformat(last["date"])
+        -
+        datetime.fromisoformat(first["date"])
+    ).days
+
+
+    if days == 0:
+        return 0
+
+
+    return (
+        last["exp"] - first["exp"]
+    ) / days
+
+
+
+def month_average(history):
+
+    month = datetime.now().strftime("%Y-%m")
+
+    data = [
+        h for h in history
+        if h["date"].startswith(month)
+    ]
+
+
+    if len(data) < 2:
+        return 0
+
+
+    days = (
+        datetime.fromisoformat(data[-1]["date"])
+        -
+        datetime.fromisoformat(data[0]["date"])
+    ).days
+
+
+    if days == 0:
+        return 0
+
+
+    return (
+        data[-1]["exp"]
+        -
+        data[0]["exp"]
+    ) / days
+
+
+
+def biggest_day(history):
+
+    best = 0
+    best_date = None
+
+
+    for i in range(1, len(history)):
+
+        gain = (
+            history[i]["exp"]
+            -
+            history[i-1]["exp"]
+        )
+
+
+        if gain > best:
+
+            best = gain
+            best_date = history[i]["date"]
+
+
+    return best, best_date
+
+
+
+def eta_days(exp_needed, avg):
+
+    if avg <= 0:
+        return None
+
+    return int(exp_needed / avg)
+
+
+
+# ======================
+# DISCORD
+# ======================
+
+def send_discord(message):
 
     requests.post(
         DISCORD_WEBHOOK_URL,
@@ -121,47 +303,143 @@ def send_to_discord(message):
 
 
 
-# === MAIN ===
+# ======================
+# MAIN
+# ======================
 
 def main():
 
     print("BOT START")
 
-    exp = fetch_exp()
 
+    highscore = fetch_highscore()
 
-    if exp is None:
+    if not highscore:
 
-        send_to_discord(
-            f"⚠️ Nie znaleziono {CHAR_NAME}"
+        send_discord(
+            "⚠️ Nie znaleziono postaci w highscores"
         )
 
         return
 
 
-    previous = load_previous_exp()
+    char = fetch_character_data()
 
 
-    if previous is None:
-
-        message = (
-            f"📊 EXP {CHAR_NAME}: **{exp:,}**\n"
-            f"📝 Pierwszy zapis"
-        )
-
-    else:
-
-        gain = exp - previous
-
-        message = (
-            f"📊 EXP {CHAR_NAME}: **{exp:,}**\n"
-            f"📈 Przyrost: **{gain:,}**"
-        )
+    level = highscore["level"]
+    exp = highscore["value"]
 
 
-    send_to_discord(message)
+    achievements = (
+        char["character"]["achievement_points"]
+        if char else "?"
+    )
 
-    save_exp(exp)
+
+    rank = highscore["rank"]
+
+
+    today = datetime.now().date().isoformat()
+
+
+    history = load_history()
+
+
+    history = add_today(
+        history,
+        {
+            "date": today,
+            "exp": exp,
+            "level": level,
+            "rank": rank,
+            "achievement_points": achievements
+        }
+    )
+
+
+    save_history(history)
+
+
+    gain_today = daily_gain(history)
+
+    avg = average_daily(history)
+
+    avg_month = month_average(history)
+
+
+    next_level_exp = exp_for_level(level + 1)
+
+    missing = next_level_exp - exp
+
+
+    lvl_targets = []
+
+    for target in [650,700,750]:
+
+        if target > level:
+
+            missing_target = (
+                exp_for_level(target)
+                -
+                exp
+            )
+
+            days = eta_days(
+                missing_target,
+                avg
+            )
+
+            lvl_targets.append(
+                f"{target}: {days} dni"
+                if days else
+                f"{target}: brak danych"
+            )
+
+
+
+    best, best_date = biggest_day(history)
+
+
+
+    message = f"""
+🌙 **Daily Tibia Report**
+
+🧙 **{CHAR_NAME}**
+🏹 Royal Paladin | Level **{level}**
+🏆 Rank: **#{rank}**
+⭐ Achievement points: **{achievements}**
+
+✨ EXP:
+**{exp:,}**
+
+📈 Dzisiaj:
+**+{gain_today:,}**
+
+📅 7 dni:
+**+{period_gain(history,7):,}**
+
+📆 Miesiąc:
+**+{period_gain(history,30):,}**
+
+⏱️ Średnia ogólna:
+**{int(avg):,}/dzień**
+
+⏱️ Średnia miesiąca:
+**{int(avg_month):,}/dzień**
+
+📉 Do levela {level+1}:
+**{missing:,} EXP**
+
+🎯 ETA:
+{chr(10).join(lvl_targets)}
+
+🔥 Rekord dzienny:
+**{best:,}**
+({best_date})
+"""
+
+
+    send_discord(message)
 
 
     print("BOT END")
