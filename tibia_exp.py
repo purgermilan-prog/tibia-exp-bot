@@ -14,19 +14,46 @@ def fetch_exp():
     except Exception:
         return None
 
-    # Wariant 1 — najczęściej spotykany
+    # Wariant 1 — najczęstszy
     try:
         return data["character"]["character"]["experience"]
-    except KeyError:
+    except Exception:
         pass
 
-    # Wariant 2 — czasem TibiaData zwraca uproszczoną strukturę
+    # Wariant 2 — uproszczony
     try:
         return data["character"]["experience"]
-    except KeyError:
+    except Exception:
         pass
 
-    # Jeśli nie znaleziono EXP w żadnym wariancie
+    # Wariant 3 — niektóre odpowiedzi TibiaData mają EXP w "data"
+    try:
+        return data["character"]["data"]["experience"]
+    except Exception:
+        pass
+
+    # Wariant 4 — fallback: szukamy EXP w całym JSON
+    try:
+        # przechodzimy po wszystkich polach i szukamy klucza "experience"
+        def find_exp(obj):
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    if k == "experience" and isinstance(v, int):
+                        return v
+                    found = find_exp(v)
+                    if found:
+                        return found
+            elif isinstance(obj, list):
+                for item in obj:
+                    found = find_exp(item)
+                    if found:
+                        return found
+            return None
+
+        return find_exp(data)
+    except Exception:
+        pass
+
     return None
 
 
