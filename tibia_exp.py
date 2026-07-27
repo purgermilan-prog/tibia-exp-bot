@@ -685,33 +685,20 @@ def main():
     )
 
 
-    targets = []
+   # najbliższy milestone co 50 leveli
 
+milestone = ((level // 50) + 1) * 50
 
-    for target in [
-        650,
-        700,
-        750
-    ]:
+missing_milestone = (
+    exp_for_level(milestone)
+    -
+    exp
+)
 
-        if target > level:
-
-            missing_target = (
-                exp_for_level(target)
-                -
-                exp
-            )
-
-
-            days = eta_days(
-                missing_target,
-                avg
-            )
-
-
-            targets.append(
-                f"{target}: {eta_text(days)}"
-            )
+milestone_days = eta_days(
+    missing_milestone,
+    avg
+)
 
 
 
@@ -753,8 +740,14 @@ def main():
 📉 To level {next_level}:
 **{missing:,} EXP**
 
-🎯 Level prediction:
-{chr(10).join(targets)}
+🎯 Najbliższy milestone:
+Level **{milestone}**
+
+📉 Brakuje:
+**{missing_milestone:,} EXP**
+
+⏳ ETA:
+**{eta_text(milestone_days)}**
 
 🤖 Bot running:
 **{bot_days(history)} day**
