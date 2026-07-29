@@ -706,7 +706,6 @@ def main():
 
 
     message = f"""
-message = f"""
 🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
 
 ⭐ Level: **{level}**
