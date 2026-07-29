@@ -706,62 +706,33 @@ def main():
 
 
     message = f"""
-🌙 **Daily Tibia EXP Report**
-
-🧙 **{CHAR_NAME}**
-🏹 {vocation}
-🌎 {WORLD}
+message = f"""
+🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
 
 ⭐ Level: **{level}**
 🏆 Rank: **#{rank}**
-🏅 Achievement points: **{achievements}**
 
-✨ Current EXP:
-**{exp:,}**
+✨ Current EXP: **{exp:,}**
+📈 Today: **+{gain_today:,}**
+📅 Last 7 days: **+{gain_week:,}**
+📆 Current month: **+{gain_month:,}**
 
-📈 Today:
-**+{gain_today:,}**
+⏱️ Avg/day: **{int(avg):,}**
+⏱️ Avg this month: **{int(avg_m):,}**
 
-📅 Last 7 days:
-**+{gain_week:,}**
+📉 To level {next_level}: **{missing:,} EXP**
+🎯 Next milestone ({milestone}): **{missing_milestone:,} EXP**
+⏳ ETA: **{eta_text(milestone_days)}**
 
-📆 Current month:
-**+{gain_month:,}**
+🤖 Bot running: **{bot_days(history)} day**
+📅 Tracking since: **{history[0]["date"]}**
 
-⏱️ Average EXP/day:
-**{int(avg):,}**
+🚀 EXP since start: **+{exp_since_start(history):,}**
+🆙 Levels since start: **+{levels_since_start(history)}**
 
-⏱️ Average this month:
-**{int(avg_m):,}**
-
-📉 To level {next_level}:
-**{missing:,} EXP**
-
-🎯 Najbliższy milestone:
-Level **{milestone}**
-
-📉 Brakuje:
-**{missing_milestone:,} EXP**
-
-⏳ ETA:
-**{eta_text(milestone_days)}**
-
-🤖 Bot running:
-**{bot_days(history)} day**
-
-📅 Tracking since:
-**{history[0]["date"]}**
-
-🚀 EXP since start:
-**+{exp_since_start(history):,}**
-
-🆙 Levels since start:
-**+{levels_since_start(history)}**
-
-🔥 Biggest daily gain:
-**+{best:,}**
-({best_date})
+🔥 Best daily gain: **+{best:,}** ({best_date})
 """
+
 
 
     send_discord(message)
