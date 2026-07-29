@@ -1,0 +1,27 @@
+name: Guild EXP Report
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # codziennie o 22:00
+  workflow_dispatch:        # ręczne odpalenie
+
+jobs:
+  guild-exp:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run guild report
+        run: python guild_exp.py
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_GUILD }}
