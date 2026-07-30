@@ -1,3 +1,4 @@
+import cloudscraper
 import requests
 from datetime import datetime
 import os
@@ -6,6 +7,8 @@ URL = "https://guildstats.eu/character/Mian%20Stone%27arrow"
 
 HTML_FILE = "guildstats_page.html"
 
+
+import cloudscraper
 
 def download_page():
 
@@ -21,21 +24,18 @@ def download_page():
             "application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
         ),
         "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.google.com/",
-        "DNT": "1",
-        "Connection": "keep-alive"
+        "Referer": "https://www.google.com/"
     }
 
-    session = requests.Session()
+    scraper = cloudscraper.create_scraper()
 
-    response = session.get(
+    response = scraper.get(
         URL,
         headers=headers,
         timeout=30
     )
 
     print("STATUS:", response.status_code)
-    print("HEADERS:", response.headers)
 
     response.raise_for_status()
 
