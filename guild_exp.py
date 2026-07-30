@@ -9,7 +9,7 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 GUILD_NAME = "General Levy of Sarmats"
 WORLD = "Antica"
 
-SAVE_FILE = "guild_history.json"
+SAVE_FILE = "guild_exp_history.json"
 
 API_RETRIES = 3
 API_TIMEOUT = 20
