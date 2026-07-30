@@ -10,14 +10,32 @@ HTML_FILE = "guildstats_page.html"
 def download_page():
 
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": (
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/",
+        "DNT": "1",
+        "Connection": "keep-alive"
     }
 
-    response = requests.get(
+    session = requests.Session()
+
+    response = session.get(
         URL,
         headers=headers,
         timeout=30
     )
+
+    print("STATUS:", response.status_code)
+    print("HEADERS:", response.headers)
 
     response.raise_for_status()
 
