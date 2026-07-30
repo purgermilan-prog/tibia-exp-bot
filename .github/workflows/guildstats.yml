@@ -1,5 +1,8 @@
 name: GuildStats Bot
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
 
