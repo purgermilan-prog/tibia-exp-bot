@@ -98,8 +98,12 @@ def load_history():
 
 
 def save_history(data):
-    with open(SAVE_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    try:
+        with open(SAVE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        print(f"Saved history to {SAVE_FILE}")
+    except Exception as e:
+        print("SAVE ERROR:", e)
 
 
 # ======================
