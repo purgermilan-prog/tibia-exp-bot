@@ -710,20 +710,18 @@ def main():
 📈 Today: **+{format_exp(gain_today)}**
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
+📉 Next LVL {level + 1}: **{format_exp(exp_for_level(level + 1) - exp)}**
 
 ⚡ Avg/day: **{format_exp(int(avg))}**
 ⚡ Avg month: **{format_exp(int(avg_month))}**
 
-📉 Next LVL {level + 1}: **{format_exp(exp_for_level(level + 1) - exp)}**
-
-🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
-
-🤖 Bot: **{bot_days(history)} days**
-📅 Since: **{history[0]["date"]}**
-
 🚀 Total gain: **+{format_exp(exp_since_start(history))} EXP**
 🆙 Levels: **+{levels_since_start(history)}**
 🔥 Best: **+{format_exp(best)} ({best_date})**
+
+🤖 Bot: **{bot_days(history)} days**
+📅 Since: **{history[0]["date"]}**
+🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
 """
 
 
