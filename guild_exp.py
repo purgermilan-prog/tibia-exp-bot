@@ -578,36 +578,24 @@ def main():
 
 
     message = f"""
-🌙 **Daily EXP Report — {GUILD_NAME} ({WORLD})**
+🌙 **Daily Exp Report — {GUILD_NAME} ({WORLD})**
 
 👥 Members: **{len(members)}**
+🟢 Active yesterday: **{active_yesterday}/{len(members)} ({active_yesterday / len(members) * 100:.1f}%)**
+🟢 Active last 7 days: **{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
 
-🟢 Active yesterday:
-**{active_yesterday}/{len(members)} ({active_yesterday / len(members) * 100:.1f}%)**
+📦 Total exp: **{total_exp_today:,}**
 
-🟢 Active last 7 days:
-**{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
+📈 Today: **+{gain_today_total:,}**
 
-📦 Total EXP:
-**{total_exp_today:,}**
-
-📈 Today:
-**+{gain_today_total:,}**
-
-📅 Last 7 days:
-**+{gain_week_total:,}**
+📅 Last 7 days: **+{gain_week_total:,}**
 
 📆 Current month:
 **+{gain_month_total:,}**
-
 {format_top3("🏆 Today TOP 3:", top_today)}
-
 {format_top3("🏆 Week TOP 3:", top_week)}
-
 {format_top3("🏆 Month TOP 3:", top_month)}
-
 {guild_record_text}
-
 {individual_record_text}
 """
 
