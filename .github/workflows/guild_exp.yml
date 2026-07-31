@@ -1,8 +1,6 @@
 name: Guild EXP Report
 
 on:
-  schedule:
-    - cron: "0 22 * * *"   # codziennie o 22:00
   workflow_dispatch:
 
 jobs:
@@ -27,7 +25,7 @@ jobs:
       - name: Run guild report
         run: python guild_exp.py
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GLOS: ${{ secrets.GLOS }}
 
       - name: Save guild EXP history
         run: |
