@@ -438,6 +438,19 @@ def main():
     top_month = get_top3(member_gain_month)
 
 
+    # ======================
+    # ACTIVE MEMBERS
+    # ======================
+
+    active_yesterday = sum(
+        1 for gain in member_gain_today.values()
+        if gain > 0
+    )
+
+    active_last_7_days = sum(
+        1 for gain in member_gain_week.values()
+        if gain > 0
+    )
 
     # ======================
     # GUILD RECORDS TOP 3
@@ -568,6 +581,12 @@ def main():
 🌙 **Daily EXP Report — {GUILD_NAME} ({WORLD})**
 
 👥 Members: **{len(members)}**
+
+🟢 Active yesterday:
+**{active_yesterday}/{len(members)} ({active_yesterday / len(members) * 100:.1f}%)**
+
+🟢 Active last 7 days:
+**{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
 
 📦 Total EXP:
 **{total_exp_today:,}**
