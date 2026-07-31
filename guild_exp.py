@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime, timedelta
 
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+DISCORD_WEBHOOK_URL = os.getenv("GLOS")
 
 GUILD_NAME = "General Levy of Sarmats"
 WORLD = "Antica"
