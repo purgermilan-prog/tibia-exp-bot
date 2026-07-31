@@ -585,13 +585,9 @@ def main():
 🟢 Active last 7 days: **{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
 
 📦 Total exp: **{total_exp_today:,}**
-
 📈 Today: **+{gain_today_total:,}**
-
 📅 Last 7 days: **+{gain_week_total:,}**
-
-📆 Current month:
-**+{gain_month_total:,}**
+📆 Current month: **+{gain_month_total:,}**
 {format_top3("🏆 Today TOP 3:", top_today)}
 {format_top3("🏆 Week TOP 3:", top_week)}
 {format_top3("🏆 Month TOP 3:", top_month)}
