@@ -271,15 +271,13 @@ def main():
         total_exp_today += exp
 
 
-
-        if name not in history["members"]:
-
-    history["members"][name] = [
-        {
-            "date": today,
-            "exp": exp
-        }
-    ]
+    if name not in history["members"]:
+        history["members"][name] = [
+            {
+                "date": today,
+                "exp": exp
+            }
+        ]
 
     continue
 
