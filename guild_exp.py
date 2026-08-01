@@ -16,6 +16,38 @@ API_TIMEOUT = 20
 
 
 # ======================
+# CZAS TIBII
+# ======================
+
+def tibia_datetime():
+
+    now = datetime.now()
+
+    # Tibia resetuje dobę o 10:00
+    if now.hour < 10:
+        now -= timedelta(days=1)
+
+    return now
+
+
+def tibia_date():
+
+    return tibia_datetime().date().isoformat()
+
+
+def tibia_day_start():
+
+    now = tibia_datetime()
+
+    return now.replace(
+        hour=10,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
+
+
+# ======================
 # API REQUEST
 # ======================
 
@@ -80,7 +112,6 @@ def fetch_highscore(name):
     except Exception:
         total_pages = 50
 
-
     for page in range(1, total_pages + 1):
 
         url = f"https://api.tibiadata.com/v4/highscores/{WORLD}/experience/all/{page}"
@@ -90,21 +121,20 @@ def fetch_highscore(name):
         if not data:
             continue
 
-
         try:
             players = data["highscores"]["highscore_list"]
 
         except Exception:
             continue
 
-
         for p in players:
 
             if p["name"].lower() == name.lower():
                 return p
 
-
     return None
+
+
 # ======================
 # HISTORY
 # ======================
@@ -117,7 +147,6 @@ def load_history():
             "guild_daily": []
         }
 
-
     try:
         with open(SAVE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -127,7 +156,6 @@ def load_history():
             "members": {},
             "guild_daily": []
         }
-
 
 
 def save_history(data):
@@ -145,9 +173,6 @@ def save_history(data):
 
     except Exception as e:
         print("SAVE ERROR:", e)
-
-
-
 # ======================
 # TOP 3 FORMAT
 # ======================
@@ -162,7 +187,6 @@ def get_top3(data):
         key=lambda x: x[1],
         reverse=True
     )[:3]
-
 
 
 def format_top3(title, players):
@@ -185,7 +209,6 @@ def format_top3(title, players):
 
     if not players:
         text += "Brak danych\n"
-
 
     return text
 
@@ -212,11 +235,12 @@ def main():
         return
 
 
-
     history = load_history()
 
 
-    today = datetime.now().date().isoformat()
+    # DOBRA TIBII: 10:00 -> 10:00
+
+    today = tibia_date()
 
 
 
@@ -233,7 +257,6 @@ def main():
     # FETCH EXP MEMBERS
     # ======================
 
-
     for name in members:
 
         hs = fetch_highscore(name)
@@ -241,7 +264,6 @@ def main():
 
         if not hs:
             continue
-
 
 
         exp = hs["value"]
@@ -278,7 +300,7 @@ def main():
 
 
 
-        # DZISIAJ
+        # DZISIAJ (DOBRA TIBII)
 
         if len(member_history) >= 2:
 
@@ -296,7 +318,7 @@ def main():
         # TYDZIEŃ
 
         week_limit = (
-            datetime.now()
+            tibia_datetime()
             -
             timedelta(days=7)
         ).date().isoformat()
@@ -322,7 +344,7 @@ def main():
 
         # MIESIĄC
 
-        month_prefix = datetime.now().strftime("%Y-%m")
+        month_prefix = tibia_datetime().strftime("%Y-%m")
 
 
         month_data = [
@@ -341,9 +363,6 @@ def main():
         else:
 
             member_gain_month[name] = 0
-
-
-
     # ======================
     # GUILD DAILY HISTORY
     # ======================
@@ -385,7 +404,7 @@ def main():
 
 
     week_limit = (
-        datetime.now()
+        tibia_datetime()
         -
         timedelta(days=7)
     ).date().isoformat()
@@ -410,7 +429,7 @@ def main():
 
 
 
-    month_prefix = datetime.now().strftime("%Y-%m")
+    month_prefix = tibia_datetime().strftime("%Y-%m")
 
 
     month_data = [
@@ -429,6 +448,9 @@ def main():
     else:
 
         gain_month_total = 0
+
+
+
     # ======================
     # TOP 3 PLAYERS
     # ======================
@@ -436,6 +458,7 @@ def main():
     top_today = get_top3(member_gain_today)
     top_week = get_top3(member_gain_week)
     top_month = get_top3(member_gain_month)
+
 
 
     # ======================
@@ -447,10 +470,13 @@ def main():
         if gain > 0
     )
 
+
     active_last_7_days = sum(
         1 for gain in member_gain_week.values()
         if gain > 0
     )
+
+
 
     # ======================
     # GUILD RECORDS TOP 3
@@ -473,6 +499,7 @@ def main():
                 gain
             )
         )
+
 
 
     guild_records_top3 = sorted(
@@ -588,10 +615,13 @@ def main():
 📈 Today: **+{gain_today_total:,}**
 📅 Last 7 days: **+{gain_week_total:,}**
 📆 Current month: **+{gain_month_total:,}**
+
 {format_top3("🏆 Today TOP 3:", top_today)}
 {format_top3("🏆 Week TOP 3:", top_week)}
 {format_top3("🏆 Month TOP 3:", top_month)}
+
 {guild_record_text}
+
 {individual_record_text}
 """
 
