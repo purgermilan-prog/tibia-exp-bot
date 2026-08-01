@@ -52,25 +52,38 @@ def tibia_day_start():
 # ======================
 
 def api_get(url):
+
     for attempt in range(1, API_RETRIES + 1):
+
         try:
+
             r = requests.get(
                 url,
                 timeout=API_TIMEOUT,
-                headers={"User-Agent": "TibiaGuildEXPBot/1.0"}
+                headers={
+                    "User-Agent": "TibiaGuildEXPBot/1.0"
+                }
             )
 
             if r.status_code == 200:
                 return r.json()
 
-            print(f"API error {r.status_code}, attempt {attempt}/{API_RETRIES}")
+            print(
+                f"API error {r.status_code}, attempt {attempt}/{API_RETRIES}"
+            )
 
         except Exception as e:
-            print(f"API exception: {e}, attempt {attempt}/{API_RETRIES}")
+
+            print(
+                f"API exception: {e}, attempt {attempt}/{API_RETRIES}"
+            )
+
 
         time.sleep(3)
 
+
     return None
+
 
 
 # ======================
@@ -78,19 +91,33 @@ def api_get(url):
 # ======================
 
 def fetch_guild_members():
-    url = f"https://api.tibiadata.com/v4/guild/{GUILD_NAME.replace(' ', '%20')}"
+
+    url = (
+        "https://api.tibiadata.com/v4/guild/"
+        f"{GUILD_NAME.replace(' ', '%20')}"
+    )
 
     data = api_get(url)
+
 
     if not data:
         return []
 
+
     try:
+
         members = data["guild"]["members"]
-        return [m["name"] for m in members]
+
+        return [
+            m["name"]
+            for m in members
+        ]
+
 
     except Exception:
+
         return []
+
 
 
 # ======================
@@ -99,40 +126,74 @@ def fetch_guild_members():
 
 def fetch_highscore(name):
 
-    url = f"https://api.tibiadata.com/v4/highscores/{WORLD}/experience/all/1"
+    url = (
+        f"https://api.tibiadata.com/v4/highscores/"
+        f"{WORLD}/experience/all/1"
+    )
+
 
     first = api_get(url)
+
 
     if not first:
         return None
 
+
     try:
-        total_pages = first["highscores"]["highscore_page"]["total_pages"]
+
+        total_pages = (
+            first["highscores"]
+            ["highscore_page"]
+            ["total_pages"]
+        )
+
 
     except Exception:
+
         total_pages = 50
+
+
 
     for page in range(1, total_pages + 1):
 
-        url = f"https://api.tibiadata.com/v4/highscores/{WORLD}/experience/all/{page}"
+        url = (
+            f"https://api.tibiadata.com/v4/highscores/"
+            f"{WORLD}/experience/all/{page}"
+        )
+
 
         data = api_get(url)
+
 
         if not data:
             continue
 
+
         try:
-            players = data["highscores"]["highscore_list"]
+
+            players = (
+                data["highscores"]
+                ["highscore_list"]
+            )
+
 
         except Exception:
+
             continue
+
+
 
         for p in players:
 
+
             if p["name"].lower() == name.lower():
+
                 return p
 
+
+
     return None
+
 
 
 # ======================
@@ -141,27 +202,49 @@ def fetch_highscore(name):
 
 def load_history():
 
+
     if not os.path.exists(SAVE_FILE):
+
         return {
             "members": {},
             "guild_daily": []
         }
+
+
 
     try:
-        with open(SAVE_FILE, "r", encoding="utf-8") as f:
+
+        with open(
+            SAVE_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
             return json.load(f)
 
+
+
     except Exception:
+
         return {
             "members": {},
             "guild_daily": []
         }
+
+
 
 
 def save_history(data):
 
+
     try:
-        with open(SAVE_FILE, "w", encoding="utf-8") as f:
+
+        with open(
+            SAVE_FILE,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
             json.dump(
                 data,
                 f,
@@ -169,18 +252,34 @@ def save_history(data):
                 ensure_ascii=False
             )
 
-        print(f"Saved history to {SAVE_FILE}")
+
+        print(
+            f"Saved history to {SAVE_FILE}"
+        )
+
+
 
     except Exception as e:
-        print("SAVE ERROR:", e)
+
+        print(
+            "SAVE ERROR:",
+            e
+        )
+
+
+
 # ======================
 # TOP 3 FORMAT
 # ======================
 
 def get_top3(data):
 
+
     if not data:
+
         return []
+
+
 
     return sorted(
         data.items(),
@@ -189,15 +288,20 @@ def get_top3(data):
     )[:3]
 
 
+
 def format_top3(title, players):
 
+
     text = f"\n{title}\n"
+
 
     medals = [
         "🥇",
         "🥈",
         "🥉"
     ]
+
+
 
     for i, player in enumerate(players):
 
@@ -207,14 +311,16 @@ def format_top3(title, players):
             f"(+{player[1]:,})\n"
         )
 
+
+
     if not players:
+
         text += "Brak danych\n"
 
+
+
     return text
-
-
-
-# ======================
+    # ======================
 # MAIN
 # ======================
 
@@ -235,7 +341,9 @@ def main():
         return
 
 
+
     history = load_history()
+
 
 
     # DOBRA TIBII: 10:00 -> 10:00
@@ -259,27 +367,33 @@ def main():
 
     for name in members:
 
+
         hs = fetch_highscore(name)
 
 
         if not hs:
+
             continue
+
 
 
         exp = hs["value"]
 
+
         total_exp_today += exp
 
 
-    if name not in history["members"]:
-        history["members"][name] = [
-            {
-                "date": today,
-                "exp": exp
-            }
-        ]
 
-    continue
+        # NOWY GRACZ
+
+        if name not in history["members"]:
+
+            history["members"][name] = [
+                {
+                    "date": today,
+                    "exp": exp
+                }
+            ]
 
 
 
@@ -287,12 +401,15 @@ def main():
 
 
 
+        # Aktualizacja dzisiejszego wpisu
+
         if (
             member_history
             and member_history[-1]["date"] == today
         ):
 
             member_history[-1]["exp"] = exp
+
 
         else:
 
@@ -305,7 +422,9 @@ def main():
 
 
 
-        # DZISIAJ (DOBRA TIBII)
+        # ======================
+        # DZISIAJ
+        # ======================
 
         if len(member_history) >= 2:
 
@@ -320,7 +439,9 @@ def main():
 
 
 
+        # ======================
         # TYDZIEŃ
+        # ======================
 
         week_limit = (
             tibia_datetime()
@@ -339,35 +460,60 @@ def main():
         )
 
 
+
         member_gain_week[name] = (
+
             exp - old_week["exp"]
+
             if old_week
+
             else 0
+
         )
 
 
 
+        # ======================
         # MIESIĄC
+        # ======================
 
-        month_prefix = tibia_datetime().strftime("%Y-%m")
+        month_prefix = (
+            tibia_datetime()
+            .strftime("%Y-%m")
+        )
+
 
 
         month_data = [
+
             x for x in member_history
+
             if x["date"].startswith(month_prefix)
+
         ]
+
 
 
         if len(month_data) >= 2:
 
+
             member_gain_month[name] = (
+
                 exp -
                 month_data[0]["exp"]
+
             )
+
 
         else:
 
+
             member_gain_month[name] = 0
+
+
+
+
+
     # ======================
     # GUILD DAILY HISTORY
     # ======================
@@ -382,9 +528,13 @@ def main():
         and guild_daily[-1]["date"] == today
     ):
 
+
         guild_daily[-1]["exp_total"] = total_exp_today
 
+
+
     else:
+
 
         guild_daily.append(
             {
@@ -397,66 +547,98 @@ def main():
 
     if len(guild_daily) >= 2:
 
+
         gain_today_total = (
+
             total_exp_today -
             guild_daily[-2]["exp_total"]
+
         )
 
+
     else:
+
 
         gain_today_total = 0
 
 
 
+
+
     week_limit = (
+
         tibia_datetime()
         -
         timedelta(days=7)
+
     ).date().isoformat()
 
 
 
     old_week = next(
+
         (
+
             x for x in guild_daily
+
             if x["date"] >= week_limit
+
         ),
+
         None
+
     )
+
 
 
     gain_week_total = (
+
         total_exp_today -
         old_week["exp_total"]
+
         if old_week
+
         else 0
+
     )
 
 
 
-    month_prefix = tibia_datetime().strftime("%Y-%m")
+    month_prefix = (
+
+        tibia_datetime()
+        .strftime("%Y-%m")
+
+    )
+
 
 
     month_data = [
+
         x for x in guild_daily
+
         if x["date"].startswith(month_prefix)
+
     ]
+
 
 
     if len(month_data) >= 2:
 
+
         gain_month_total = (
+
             total_exp_today -
             month_data[0]["exp_total"]
+
         )
+
 
     else:
 
+
         gain_month_total = 0
-
-
-
-    # ======================
+            # ======================
     # TOP 3 PLAYERS
     # ======================
 
@@ -471,14 +653,21 @@ def main():
     # ======================
 
     active_yesterday = sum(
+
         1 for gain in member_gain_today.values()
+
         if gain > 0
+
     )
 
 
+
     active_last_7_days = sum(
+
         1 for gain in member_gain_week.values()
+
         if gain > 0
+
     )
 
 
@@ -490,28 +679,46 @@ def main():
     guild_records = []
 
 
+
     for i in range(1, len(guild_daily)):
 
+
         gain = (
+
             guild_daily[i]["exp_total"]
+
             -
+
             guild_daily[i-1]["exp_total"]
+
         )
 
+
         guild_records.append(
+
             (
+
                 guild_daily[i]["date"],
+
                 gain
+
             )
+
         )
 
 
 
     guild_records_top3 = sorted(
+
         guild_records,
+
         key=lambda x: x[1],
+
         reverse=True
+
     )[:3]
+
+
 
 
 
@@ -522,30 +729,48 @@ def main():
     individual_records = []
 
 
+
     for name, hist in history["members"].items():
+
 
         for i in range(1, len(hist)):
 
+
             gain = (
+
                 hist[i]["exp"]
+
                 -
+
                 hist[i-1]["exp"]
+
             )
 
+
             individual_records.append(
+
                 (
+
                     name,
+
                     hist[i]["date"],
+
                     gain
+
                 )
+
             )
 
 
 
     individual_records_top3 = sorted(
+
         individual_records,
+
         key=lambda x: x[2],
+
         reverse=True
+
     )[:3]
 
 
@@ -565,42 +790,66 @@ def main():
     ]
 
 
+
     guild_record_text = "\n🔥 Guild daily records:\n"
+
 
 
     if guild_records_top3:
 
+
         for i, record in enumerate(guild_records_top3):
 
+
             guild_record_text += (
+
                 f"{medals[i]} "
+
                 f"+{record[1]:,} "
+
                 f"({record[0]})\n"
+
             )
+
 
     else:
 
+
         guild_record_text += "Brak danych\n"
+
+
 
 
 
     individual_record_text = "\n🔥 Individual records:\n"
 
 
+
     if individual_records_top3:
+
 
         for i, record in enumerate(individual_records_top3):
 
+
             individual_record_text += (
+
                 f"{medals[i]} "
+
                 f"{record[0]} "
+
                 f"+{record[2]:,} "
+
                 f"({record[1]})\n"
+
             )
+
 
     else:
 
+
         individual_record_text += "Brak danych\n"
+
+
 
 
 
@@ -613,17 +862,32 @@ def main():
 🌙 **Daily Exp Report — {GUILD_NAME} ({WORLD})**
 
 👥 Members: **{len(members)}**
-🟢 Active yesterday: **{active_yesterday}/{len(members)} ({active_yesterday / len(members) * 100:.1f}%)**
-🟢 Active last 7 days: **{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
 
-📦 Total exp: **{total_exp_today:,}**
-📈 Today: **+{gain_today_total:,}**
-📅 Last 7 days: **+{gain_week_total:,}**
-📆 Current month: **+{gain_month_total:,}**
+🟢 Active yesterday:
+**{active_yesterday}/{len(members)} ({active_yesterday / len(members) * 100:.1f}%)**
+
+🟢 Active last 7 days:
+**{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
+
+📦 Total exp:
+**{total_exp_today:,}**
+
+📈 Today:
+**+{gain_today_total:,}**
+
+📅 Last 7 days:
+**+{gain_week_total:,}**
+
+📆 Current month:
+**+{gain_month_total:,}**
+
 
 {format_top3("🏆 Today TOP 3:", top_today)}
+
 {format_top3("🏆 Week TOP 3:", top_week)}
+
 {format_top3("🏆 Month TOP 3:", top_month)}
+
 
 {guild_record_text}
 
@@ -631,9 +895,14 @@ def main():
 """
 
 
+
     send_discord(message)
 
+
+
     print("GUILD BOT END")
+
+
 
 
 
@@ -643,26 +912,39 @@ def main():
 
 def send_discord(message):
 
+
     if not DISCORD_WEBHOOK_URL:
 
+
         print("Brak webhooka")
+
         print(message)
 
         return
 
 
 
+
     for attempt in range(3):
+
 
         try:
 
+
             r = requests.post(
+
                 DISCORD_WEBHOOK_URL,
+
                 json={
+
                     "content": message
+
                 },
+
                 timeout=15
+
             )
+
 
 
             if r.status_code in [200, 204]:
@@ -671,12 +953,18 @@ def send_discord(message):
 
 
 
+
         except Exception as e:
 
+
             print(
+
                 "Discord error:",
+
                 e
+
             )
+
 
 
         time.sleep(3)
@@ -684,6 +972,8 @@ def send_discord(message):
 
 
 
+
 if __name__ == "__main__":
+
 
     main()
