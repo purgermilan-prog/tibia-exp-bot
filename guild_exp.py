@@ -274,7 +274,14 @@ def main():
 
         if name not in history["members"]:
 
-            history["members"][name] = []
+    history["members"][name] = [
+        {
+            "date": today,
+            "exp": exp
+        }
+    ]
+
+    continue
 
 
 
