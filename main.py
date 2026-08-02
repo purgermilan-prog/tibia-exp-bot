@@ -21,46 +21,12 @@ REQUEST_TIMEOUT = 20
 
 
 # ======================
-# HTTP REQUESTS
+# HTTP
 # ======================
-
-def get_page(url):
-
-    try:
-
-        r = requests.get(
-            url,
-            timeout=REQUEST_TIMEOUT,
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            }
-        )
-
-        if r.status_code == 200:
-
-            return r.text
-
-
-        print(
-            f"HTTP ERROR {r.status_code}: {url}"
-        )
-
-
-    except Exception as e:
-
-        print(
-            "REQUEST ERROR:",
-            e
-        )
-
-
-    return None
-
-
 
 def api_get(url):
 
-    for attempt in range(3):
+    for attempt in range(1, 4):
 
         try:
 
@@ -72,6 +38,12 @@ def api_get(url):
                 }
             )
 
+
+            print(
+                f"API STATUS {r.status_code}: {url}"
+            )
+
+
             if r.status_code == 200:
 
                 return r.json()
@@ -80,12 +52,56 @@ def api_get(url):
         except Exception as e:
 
             print(
-                f"API error {attempt + 1}/3:",
+                "API ERROR:",
                 e
             )
 
 
         time.sleep(3)
+
+
+    return None
+
+
+
+def get_page(url):
+
+    try:
+
+        r = requests.get(
+            url,
+            timeout=REQUEST_TIMEOUT,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 "
+                    "(Windows NT 10.0; Win64; x64) "
+                    "Chrome/138 Safari/537.36"
+                )
+            }
+        )
+
+
+        print(
+            f"PAGE STATUS {r.status_code}: {url}"
+        )
+
+
+        if r.status_code == 200:
+
+            return r.text
+
+
+        print(
+            r.text[:300]
+        )
+
+
+    except Exception as e:
+
+        print(
+            "PAGE ERROR:",
+            e
+        )
 
 
     return None
@@ -100,152 +116,78 @@ def fetch_guild_members():
 
     url = (
         "https://api.tibiadata.com/v4/guild/"
-        f"{GUILD_NAME.replace(' ', '%20')}"
+        f"{quote_plus(GUILD_NAME)}"
     )
+
 
     data = api_get(url)
 
+
     if not data:
+
         return []
+
+
 
     try:
 
         members = data["guild"]["members"]
 
-        return [
+
+        result = [
             m["name"]
             for m in members
         ]
 
-    except Exception:
 
-        return []
-
-
-
-    try:
-
-        members = data["guild"]["members"]
+        print(
+            f"FOUND MEMBERS: {len(result)}"
+        )
 
 
-        return [
-            member["name"]
-            for member in members
-        ]
+        return result
+
 
 
     except Exception as e:
 
         print(
-            "Guild parsing error:",
+            "GUILD PARSE ERROR:",
             e
         )
 
 
         return []
 # ======================
-# GUILDSTATS EXPERIENCE
+# GUILDSTATS EXP
 # ======================
 
 def fetch_character_exp(nick):
 
     encoded_nick = quote_plus(nick)
 
+
     url = (
         "https://guildstats.eu/include/character/tab.php?"
         f"nick={encoded_nick}&tab=experience"
     )
 
+
     html = get_page(url)
 
-    print("Nick:")
-    print(nick)
 
-    if html is None:
+    print(
+        "CHECK:",
+        nick
+    )
 
-        print("NO HTML RECEIVED")
-        return None
 
-    print("FIRST 1000 CHARACTERS:")
-    print(html[:1000])
+    if not html:
 
-    try:
-
-        soup = BeautifulSoup(
-            html,
-            "html.parser"
+        print(
+            "NO HTML:",
+            nick
         )
-
-        rows = soup.find_all("tr")
-
-        for row in rows:
-
-            cells = row.find_all("td")
-
-            if len(cells) < 2:
-                continue
-
-            exp_change = cells[1].get_text(strip=True)
-
-            if (
-                exp_change.startswith("+")
-                or exp_change == "0"
-            ):
-
-                exp_value = (
-                    exp_change
-                    .replace("+", "")
-                    .replace(",", "")
-                    .strip()
-                )
-
-                return int(exp_value)
-
-    except Exception as e:
-
-        print("PARSE ERROR")
-        print(e)
-
-    return None
-
-    def get_page(url):
-
-    try:
-
-        r = requests.get(
-            url,
-            timeout=REQUEST_TIMEOUT,
-            headers={
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/138.0 Safari/537.36"
-                )
-            }
-        )
-
-        print("===================================")
-        print("URL:")
-        print(url)
-        print("STATUS:")
-        print(r.status_code)
-        print("===================================")
-
-        if r.status_code == 200:
-            return r.text
-
-        print("PAGE CONTENT:")
-        print(r.text[:1000])
-
-        return None
-
-    except Exception as e:
-
-        print("===================================")
-        print("REQUEST ERROR")
-        print(url)
-        print(e)
-        print("===================================")
 
         return None
 
@@ -277,18 +219,13 @@ def fetch_character_exp(nick):
             )
 
 
-            # Szukamy wartości EXP
-            # przykłady:
-            # +10,898,273
-            # 0
-
             if (
                 exp_change.startswith("+")
                 or exp_change == "0"
             ):
 
 
-                exp_value = (
+                value = (
                     exp_change
                     .replace("+", "")
                     .replace(",", "")
@@ -296,24 +233,40 @@ def fetch_character_exp(nick):
                 )
 
 
-                return int(exp_value)
+                print(
+                    nick,
+                    "EXP:",
+                    value
+                )
+
+
+                return int(value)
 
 
 
     except Exception as e:
 
         print(
-            f"GuildStats parse error ({nick}):",
+            "GUILDSTATS PARSE ERROR:",
+            nick,
             e
         )
+
+
+
+    print(
+        "EXP NOT FOUND:",
+        nick
+    )
 
 
     return None
 
 
 
+
 # ======================
-# FETCH ALL MEMBERS EXP
+# ALL MEMBERS
 # ======================
 
 def fetch_members_exp(members):
@@ -323,61 +276,49 @@ def fetch_members_exp(members):
     detected = 0
 
 
+
     for nick in members:
 
 
         exp = fetch_character_exp(nick)
 
 
-        if exp is not None:
 
+        if exp is not None:
 
             exp_data[nick] = exp
 
             detected += 1
 
 
-            print(
-                f"{nick}: +{exp:,}"
-            )
 
-
-        else:
-
-
-            print(
-                f"{nick}: NO DATA"
-            )
-
-
-        # mała przerwa
         time.sleep(1)
 
 
 
     print(
-        f"EXP detected: {detected}/{len(members)}"
+        f"EXP DETECTED: {detected}/{len(members)}"
     )
 
 
     return exp_data, detected
 # ======================
-# TOP 3
+# FORMAT TOP 3
 # ======================
 
-def get_top3(players):
+def get_top3(data):
 
     return sorted(
-        players.items(),
+        data.items(),
         key=lambda x: x[1],
         reverse=True
     )[:3]
 
 
 
-def format_top3(players):
+def format_top3(data):
 
-    if not players:
+    if not data:
 
         return "Brak danych"
 
@@ -392,7 +333,7 @@ def format_top3(players):
     text = ""
 
 
-    for i, player in enumerate(players):
+    for i, player in enumerate(data):
 
         text += (
             f"{medals[i]} "
@@ -414,7 +355,7 @@ def send_discord(message):
     if not DISCORD_WEBHOOK_URL:
 
         print(
-            "Brak DISCORD_WEBHOOK_URL"
+            "BRAK WEBHOOKA"
         )
 
         print(message)
@@ -434,18 +375,16 @@ def send_discord(message):
         )
 
 
-        if r.status_code not in [200, 204]:
-
-            print(
-                "Discord error:",
-                r.status_code
-            )
+        print(
+            "DISCORD STATUS:",
+            r.status_code
+        )
 
 
     except Exception as e:
 
         print(
-            "Discord exception:",
+            "DISCORD ERROR:",
             e
         )
 
@@ -458,11 +397,12 @@ def send_discord(message):
 def main():
 
     print(
-        "GENERAL LEVY GUILDSTATS BOT START"
+        "=== GENERAL LEVY BOT START ==="
     )
 
 
     members = fetch_guild_members()
+
 
 
     if not members:
@@ -472,12 +412,6 @@ def main():
         )
 
         return
-
-
-
-    print(
-        f"Members found: {len(members)}"
-    )
 
 
 
@@ -505,7 +439,6 @@ def main():
     top3 = get_top3(
         exp_data
     )
-
 
 
     missing = [
@@ -537,7 +470,6 @@ def main():
 
     if missing:
 
-
         message += (
             "\n⚠️ Missing EXP data:\n"
         )
@@ -557,7 +489,7 @@ def main():
 
 
     print(
-        "BOT END"
+        "=== BOT END ==="
     )
 
 
