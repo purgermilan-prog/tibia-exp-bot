@@ -100,18 +100,26 @@ def fetch_guild_members():
 
     url = (
         "https://api.tibiadata.com/v4/guild/"
-        f"{quote_plus(GUILD_NAME)}"
+        f"{GUILD_NAME.replace(' ', '%20')}"
     )
-
-    print("URL:")
-    print(url)
 
     data = api_get(url)
 
-    print("JSON:")
-    print(data)
+    if not data:
+        return []
 
-    return []
+    try:
+
+        members = data["guild"]["members"]
+
+        return [
+            m["name"]
+            for m in members
+        ]
+
+    except Exception:
+
+        return []
 
 
 
