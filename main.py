@@ -159,6 +159,8 @@ def fetch_character_exp(nick):
 
 
     html = get_page(url)
+    print(nick, url)
+    print(html[:1000])
 
 
     if not html:
