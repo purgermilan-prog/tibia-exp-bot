@@ -158,10 +158,95 @@ def fetch_character_exp(nick):
 
     html = get_page(url)
 
-    print(nick, url)
+    print("Nick:")
+    print(nick)
+
+    if html is None:
+
+        print("NO HTML RECEIVED")
+        return None
+
+    print("FIRST 1000 CHARACTERS:")
     print(html[:1000])
 
-    if not html:
+    try:
+
+        soup = BeautifulSoup(
+            html,
+            "html.parser"
+        )
+
+        rows = soup.find_all("tr")
+
+        for row in rows:
+
+            cells = row.find_all("td")
+
+            if len(cells) < 2:
+                continue
+
+            exp_change = cells[1].get_text(strip=True)
+
+            if (
+                exp_change.startswith("+")
+                or exp_change == "0"
+            ):
+
+                exp_value = (
+                    exp_change
+                    .replace("+", "")
+                    .replace(",", "")
+                    .strip()
+                )
+
+                return int(exp_value)
+
+    except Exception as e:
+
+        print("PARSE ERROR")
+        print(e)
+
+    return None
+
+    def get_page(url):
+
+    try:
+
+        r = requests.get(
+            url,
+            timeout=REQUEST_TIMEOUT,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/138.0 Safari/537.36"
+                )
+            }
+        )
+
+        print("===================================")
+        print("URL:")
+        print(url)
+        print("STATUS:")
+        print(r.status_code)
+        print("===================================")
+
+        if r.status_code == 200:
+            return r.text
+
+        print("PAGE CONTENT:")
+        print(r.text[:1000])
+
+        return None
+
+    except Exception as e:
+
+        print("===================================")
+        print("REQUEST ERROR")
+        print(url)
+        print(e)
+        print("===================================")
+
         return None
 
 
