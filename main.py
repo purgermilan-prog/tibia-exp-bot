@@ -151,20 +151,17 @@ def fetch_character_exp(nick):
 
     encoded_nick = quote_plus(nick)
 
-
     url = (
         "https://guildstats.eu/include/character/tab.php?"
         f"nick={encoded_nick}&tab=experience"
     )
 
-
     html = get_page(url)
+
     print(nick, url)
     print(html[:1000])
 
-
     if not html:
-
         return None
 
 
