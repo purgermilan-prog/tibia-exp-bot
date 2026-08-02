@@ -1,0 +1,44 @@
+name: General Levy GuildStats EXP Bot
+
+on:
+
+  workflow_dispatch:
+
+  schedule:
+    - cron: "15 8 * * *"
+
+
+jobs:
+
+  run-bot:
+
+    runs-on: ubuntu-latest
+
+
+    permissions:
+      contents: read
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+
+      - name: Run GuildStats bot
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+        run: |
+          python main.py
