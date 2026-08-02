@@ -103,13 +103,15 @@ def fetch_guild_members():
         f"{quote_plus(GUILD_NAME)}"
     )
 
+    print("URL:")
+    print(url)
 
     data = api_get(url)
 
+    print("JSON:")
+    print(data)
 
-    if not data:
-
-        return []
+    return []
 
 
 
