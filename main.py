@@ -38,22 +38,20 @@ def api_get(url):
                 }
             )
 
-
-            print(
-                f"API STATUS {r.status_code}: {url}"
-            )
-
-
             if r.status_code == 200:
 
                 return r.json()
 
 
+            print(
+                f"API error {r.status_code}, attempt {attempt}/3"
+            )
+
+
         except Exception as e:
 
             print(
-                "API ERROR:",
-                e
+                f"API exception: {e}, attempt {attempt}/3"
             )
 
 
