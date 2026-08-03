@@ -116,38 +116,22 @@ def fetch_guild_members():
 
     url = (
         "https://api.tibiadata.com/v4/guild/"
-        f"{quote_plus(GUILD_NAME)}"
+        f"{GUILD_NAME.replace(' ', '%20')}"
     )
-
 
     data = api_get(url)
 
-
     if not data:
-
         return []
-
-
 
     try:
 
         members = data["guild"]["members"]
 
-
-        result = [
+        return [
             m["name"]
             for m in members
         ]
-
-
-        print(
-            f"FOUND MEMBERS: {len(result)}"
-        )
-
-
-        return result
-
-
 
     except Exception as e:
 
@@ -155,7 +139,6 @@ def fetch_guild_members():
             "GUILD PARSE ERROR:",
             e
         )
-
 
         return []
 # ======================
