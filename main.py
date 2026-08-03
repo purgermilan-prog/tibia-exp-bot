@@ -71,38 +71,31 @@ def get_page(url):
             timeout=REQUEST_TIMEOUT,
             headers={
                 "User-Agent": (
-                    "Mozilla/5.0 "
-                    "(Windows NT 10.0; Win64; x64) "
-                    "Chrome/138 Safari/537.36"
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/138.0.0.0 Safari/537.36"
                 )
             }
         )
 
-
-        print(
-            f"PAGE STATUS {r.status_code}: {url}"
-        )
-
+        print("=" * 60)
+        print("URL:", url)
+        print("STATUS:", r.status_code)
+        print("FINAL URL:", r.url)
+        print("CONTENT TYPE:", r.headers.get("Content-Type"))
+        print("BODY:")
+        print(r.text[:500])
+        print("=" * 60)
 
         if r.status_code == 200:
-
             return r.text
 
-
-        print(
-            r.text[:300]
-        )
-
+        return None
 
     except Exception as e:
 
-        print(
-            "PAGE ERROR:",
-            e
-        )
-
-
-    return None
+        print("REQUEST ERROR:", e)
+        return None
 
 
 
