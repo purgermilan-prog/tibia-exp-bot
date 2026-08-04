@@ -1,8 +1,6 @@
 name: Daily Tibia EXP report
 
 on:
-  schedule:
-    - cron: "45 9 * * *"
   workflow_dispatch:
 
 jobs:
