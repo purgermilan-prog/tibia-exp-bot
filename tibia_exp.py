@@ -171,52 +171,73 @@ def fetch_character_data():
 
 
 # ======================
-# HIGHSCORE
+# HIGHSCORE (ZOPTYMALIZOWANE)
 # ======================
 
-def fetch_highscore():
+def fetch_highscore(last_rank=None):
 
-    print("Searching highscores...")
+    print("Searching highscores (smart search)...")
 
-
+    # Pobieramy pierwszą stronę, aby poznać liczbę stron
     first = api_get(
         f"https://api.tibiadata.com/v4/highscores/"
         f"{WORLD}/experience/all/1"
     )
 
-
     if not first:
-
         return None
 
-
     try:
-
         pages = (
             first["highscores"]
             ["highscore_page"]
             ["total_pages"]
         )
 
-
     except Exception:
-
         pages = 50
 
+    target_pages = []
 
+    if last_rank:
 
-    for page in range(1, pages + 1):
+        # Poprawne wyliczenie strony
+        estimated_page = max(
+            1,
+            min((last_rank - 1) // 50 + 1, pages)
+        )
+
+        neighbors = [
+            estimated_page - 2,
+            estimated_page - 1,
+            estimated_page,
+            estimated_page + 1,
+            estimated_page + 2
+        ]
+
+        target_pages = []
+
+        for page in neighbors:
+            if 1 <= page <= pages and page not in target_pages:
+                target_pages.append(page)
+
+    remaining_pages = [
+        p
+        for p in range(1, pages + 1)
+        if p not in target_pages
+    ]
+
+    search_order = target_pages + remaining_pages
+
+    for page in search_order:
 
         data = api_get(
             f"https://api.tibiadata.com/v4/highscores/"
             f"{WORLD}/experience/all/{page}"
         )
 
-
         if not data:
-
             continue
-
 
         try:
 
@@ -225,11 +246,8 @@ def fetch_highscore():
                 ["highscore_list"]
             )
 
-
         except Exception:
-
             continue
-
 
         for player in players:
 
@@ -239,8 +257,11 @@ def fetch_highscore():
                 CHAR_NAME.lower()
             ):
 
-                return player
+                print(
+                    f"Found {CHAR_NAME} on page {page}"
+                )
 
+                return player
 
     return None
 # ======================
