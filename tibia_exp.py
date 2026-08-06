@@ -634,9 +634,17 @@ def main():
 
     print("BOT START")
 
+    # Wczytujemy historię, aby znać ostatni ranking
+    history = load_history()
 
-    highscore = fetch_highscore()
+    last_rank = (
+        history[-1].get("rank")
+        if history
+        else None
+    )
 
+    # Inteligentne wyszukiwanie highscores
+    highscore = fetch_highscore(last_rank)
 
     if not highscore:
 
@@ -646,11 +654,7 @@ def main():
 
         return
 
-
-
     character = fetch_character_data()
-
-
 
     level = highscore["level"]
 
@@ -658,10 +662,7 @@ def main():
 
     rank = highscore["rank"]
 
-
-
     achievements = "?"
-
 
     if character:
 
@@ -670,17 +671,11 @@ def main():
             "?"
         )
 
-
-
     # data wg doby Tibii
 
     today = tibia_date()
 
-
-
-    history = load_history()
-
-
+    # Historia została już wczytana wyżej
 
     history = update_today(
         history,
@@ -693,8 +688,7 @@ def main():
         }
     )
 
-
-    save_history(history)
+    save_history(history))
 
 
 
