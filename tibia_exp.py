@@ -1237,157 +1237,113 @@ def main():
     )
 
 
-    # ======================
-    # EMBED
-    # ======================
+   # ======================
+# EMBED
+# ======================
 
-    embed = {
+embed = {
+    "title": f"🌙 Daily EXP Report: {CHAR_NAME} 🏹",
+    "color": embed_color,
 
-        "title": (
-            f"🌙 Daily EXP Report: "
-            f"{CHAR_NAME} 🏹"
-        ),
+    "fields": [
 
+        {
+            "name": "⭐ Level",
+            "value": level_text,
+            "inline": True
+        },
 
-        "color": embed_color,
+        {
+            "name": "🏆 Rank",
+            "value": rank_text,
+            "inline": True
+        },
 
+        {
+            "name": "✨ Current EXP",
+            "value": f"**{exp:,}**",
+            "inline": False
+        },
 
-        "fields": [
+        {
+            "name": "📈 Today",
+            "value": f"**{format_exp(gain_today)}**",
+            "inline": True
+        },
 
-            {
-                "name": "⭐ Level",
-                "value": level_text,
-                "inline": True
-            },
+        {
+            "name": "📅 7 days",
+            "value": f"**{format_exp(gain_week)}**",
+            "inline": True
+        },
 
+        {
+            "name": "📆 Month",
+            "value": f"**{format_exp(gain_month)}**",
+            "inline": True
+        },
 
-            {
-                "name": "🏆 Rank",
-                "value": rank_text,
-                "inline": True
-            },
+        {
+            "name": f"📉 Next LVL {level + 1}",
+            "value": f"**{format_exp(next_level_exp)}**",
+            "inline": True
+        },
 
+        {
+            "name": "⚡ Avg/day",
+            "value": f"**{format_exp(int(avg))}**",
+            "inline": True
+        },
 
-            {
-                "name": "✨ Current EXP",
-                "value": f"**{exp:,}**",
-                "inline": False
-            },
+        {
+            "name": "⚡ Avg/month",
+            "value": f"**{format_exp(int(avg_month))}**",
+            "inline": True
+        },
 
+        {
+            "name": "📊 Progress",
+            "value": progress_bar,
+            "inline": False
+        },
 
-            {
-                "name": "📈 Today",
-                "value": (
-                    f"**{format_exp(gain_today)}**"
-                ),
-                "inline": True
-            },
+        {
+            "name": "🚀 Total gain",
+            "value": f"**+{format_exp(exp_since_start(history))} EXP**",
+            "inline": True
+        },
 
+        {
+            "name": "🆙 Levels",
+            "value": f"**+{levels_since_start(history)}**",
+            "inline": True
+        },
 
-            {
-                "name": "📅 7 days",
-                "value": (
-                    f"**{format_exp(gain_week)}**"
-                ),
-                "inline": True
-            },
-
-
-            {
-                "name": "📆 Month",
-                "value": (
-                    f"**{format_exp(gain_month)}**"
-                ),
-                "inline": True
-            },
-
-
-            {
-                "name": "📉 Next LVL "
-                         f"{level + 1}",
-                "value": (
-                    f"**{format_exp(next_level_exp)}**"
-                ),
-                "inline": True
-            },
-
-
-            {
-                "name": "⚡ Avg/day",
-                "value": (
-                    f"**{format_exp(int(avg))}**"
-                ),
-                "inline": True
-            },
-
-
-            {
-                "name": "⚡ Avg/month",
-                "value": (
-                    f"**{format_exp(int(avg_month))}**"
-                ),
-                "inline": True
-            },
-
-
-            {
-                "name": "📊 Progress",
-                "value": progress_bar,
-                "inline": False
-            },
-
-
-            {
-                "name": "🚀 Total gain",
-                "value": (
-                    f"**+{format_exp(exp_since_start(history))} EXP**"
-                ),
-
-
-            {
-                "name": "🆙 Levels",
-                "value": (
-                    f"**+"
-                    f"{levels_since_start(history)}**"
-                ),
-                "inline": True
-            },
-
-
-            {
-                "name": "🔥 Best",
-                "value": (
-                    f"**+"
-                    f"{format_exp(best)}** "
-                    f"({best_date})"
-                ),
-                "inline": True
-            }
-
-        ],
-
-
-        "footer": {
-
-            "text": (
-                f"🤖 Bot: {bot_days(history)} days"
-                f" • Since: {history[0]['date']}"
-                f" • Tibia reset: "
-                f"{tibia_day_start().strftime('%d.%m %H:%M')}"
-            )
-
+        {
+            "name": "🔥 Best",
+            "value": f"**+{format_exp(best)}** ({best_date})",
+            "inline": True
         }
+    ],
 
+    "footer": {
+        "text": (
+            f"🤖 Bot: {bot_days(history)} days"
+            f" • Since: {history[0]['date']}"
+            f" • Tibia reset: "
+            f"{tibia_day_start().strftime('%d.%m %H:%M')}"
+        )
     }
+}
 
 
-    # ======================
-    # WYSŁANIE
-    # ======================
+# ======================
+# WYSŁANIE
+# ======================
 
-    send_discord(
-        embed=embed
-    )
+send_discord(
+    embed=embed
+)
 
 
     print("BOT END")
