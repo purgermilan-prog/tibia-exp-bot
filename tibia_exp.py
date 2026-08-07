@@ -583,7 +583,7 @@ def bot_days(history):
     return (
         today - start
     ).days + 1
-```python
+
 # ======================
 # DISCORD
 # ======================
