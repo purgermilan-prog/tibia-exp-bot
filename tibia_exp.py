@@ -583,15 +583,37 @@ def bot_days(history):
     return (
         today - start
     ).days + 1
+```python
 # ======================
 # DISCORD
 # ======================
 
-def send_discord(message):
+def send_discord(embed=None, message=None):
 
     if not DISCORD_WEBHOOK_URL:
 
-        print(message)
+        if message:
+            print(message)
+
+        elif embed:
+            print(embed)
+
+        return
+
+
+    if embed:
+
+        payload = {
+            "embeds": [embed]
+        }
+
+    elif message:
+
+        payload = {
+            "content": message
+        }
+
+    else:
 
         return
 
@@ -602,9 +624,7 @@ def send_discord(message):
 
             response = requests.post(
                 DISCORD_WEBHOOK_URL,
-                json={
-                    "content": message
-                },
+                json=payload,
                 timeout=15
             )
 
@@ -612,6 +632,13 @@ def send_discord(message):
             if response.status_code in [200, 204]:
 
                 return
+
+
+            print(
+                "Discord HTTP error:",
+                response.status_code,
+                response.text
+            )
 
 
         except Exception as e:
@@ -625,6 +652,348 @@ def send_discord(message):
         time.sleep(3)
 
 
+# ======================
+# DISCORD EMBED HELPERS
+# ======================
+
+def progress_blocks(percent):
+
+    """
+    10 pól.
+    0-5%   = 0
+    6-15%  = 1
+    16-25% = 2
+    itd.
+    """
+
+    percent = max(
+        0,
+        min(100, percent)
+    )
+
+    blocks = int(
+        (percent + 5) // 10
+    )
+
+    return max(
+        0,
+        min(10, blocks)
+    )
+
+
+def build_progress_bars(
+    exp,
+    level,
+    previous_exp,
+    previous_level
+):
+
+    """
+    Tworzy pasek pokazujący:
+
+    🟦 = progress z poprzedniej doby
+    🟩 = EXP zdobyty podczas obecnej doby
+    ⬜ = pozostały EXP
+
+    Przy level-upie tworzone są dwa paski:
+    poprzedni level + nowy level.
+    """
+
+
+    # ======================
+    # PRZYPADEK: LEVEL UP
+    # ======================
+
+    if previous_level < level:
+
+        # ----------------------
+        # Poprzedni level
+        # ----------------------
+
+        old_level_start = exp_for_level(
+            previous_level
+        )
+
+        old_level_end = exp_for_level(
+            previous_level + 1
+        )
+
+        old_level_range = (
+            old_level_end -
+            old_level_start
+        )
+
+
+        if old_level_range > 0:
+
+            old_previous_percent = (
+                (
+                    previous_exp -
+                    old_level_start
+                )
+                /
+                old_level_range
+            ) * 100
+
+        else:
+
+            old_previous_percent = 0
+
+
+        old_previous_percent = max(
+            0,
+            min(100, old_previous_percent)
+        )
+
+
+        old_previous_blocks = progress_blocks(
+            old_previous_percent
+        )
+
+
+        # ----------------------
+        # Ile EXP weszło dzisiaj
+        # do starego levela
+        # ----------------------
+
+        old_current_percent = 100
+
+        old_current_blocks = 10
+
+
+        old_blue = min(
+            old_previous_blocks,
+            10
+        )
+
+        old_green = max(
+            0,
+            10 - old_blue
+        )
+
+        old_empty = 0
+
+
+        old_bar = (
+            "🟦" * old_blue
+            +
+            "🟩" * old_green
+            +
+            "⬜" * old_empty
+        )
+
+
+        old_line = (
+            f"{previous_level} "
+            f"{old_bar} "
+            f"{level}"
+        )
+
+
+        # ----------------------
+        # Nowy level
+        # ----------------------
+
+        new_level_start = exp_for_level(
+            level
+        )
+
+        new_level_end = exp_for_level(
+            level + 1
+        )
+
+        new_level_range = (
+            new_level_end -
+            new_level_start
+        )
+
+
+        if new_level_range > 0:
+
+            new_current_percent = (
+                (
+                    exp -
+                    new_level_start
+                )
+                /
+                new_level_range
+            ) * 100
+
+        else:
+
+            new_current_percent = 0
+
+
+        new_current_percent = max(
+            0,
+            min(100, new_current_percent)
+        )
+
+
+        new_blocks = progress_blocks(
+            new_current_percent
+        )
+
+
+        new_bar = (
+            "🟩" * new_blocks
+            +
+            "⬜" * (10 - new_blocks)
+        )
+
+
+        new_line = (
+            f"{level} "
+            f"{new_bar} "
+            f"{level + 1}"
+        )
+
+
+        return (
+            f"{old_line}\n"
+            f"{new_line}"
+        )
+
+
+    # ======================
+    # NORMALNY DZIEŃ
+    # ======================
+
+    current_level_start = exp_for_level(
+        level
+    )
+
+    next_level_start = exp_for_level(
+        level + 1
+    )
+
+    level_range = (
+        next_level_start -
+        current_level_start
+    )
+
+
+    if level_range <= 0:
+
+        return (
+            f"{level} "
+            f"⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ "
+            f"{level + 1}"
+        )
+
+
+    current_percent = (
+        (
+            exp -
+            current_level_start
+        )
+        /
+        level_range
+    ) * 100
+
+
+    previous_percent = (
+        (
+            previous_exp -
+            current_level_start
+        )
+        /
+        level_range
+    ) * 100
+
+
+    current_percent = max(
+        0,
+        min(100, current_percent)
+    )
+
+    previous_percent = max(
+        0,
+        min(100, previous_percent)
+    )
+
+
+    current_blocks = progress_blocks(
+        current_percent
+    )
+
+    previous_blocks = progress_blocks(
+        previous_percent
+    )
+
+
+    # Jeżeli EXP spadł, nie pokazujemy
+    # zielonych pól.
+    if current_blocks < previous_blocks:
+
+        blue = current_blocks
+        green = 0
+        empty = 10 - blue
+
+    else:
+
+        blue = previous_blocks
+        green = current_blocks - previous_blocks
+        empty = 10 - current_blocks
+
+
+    bar = (
+        "🟦" * blue
+        +
+        "🟩" * green
+        +
+        "⬜" * empty
+    )
+
+
+    return (
+        f"{level} "
+        f"{bar} "
+        f"{level + 1}"
+    )
+
+
+def get_embed_color(
+    gain_today,
+    level_up
+):
+
+    # Złoty = level up
+    if level_up:
+
+        return 0xF1C40F
+
+
+    # Czerwony = strata EXP
+    if gain_today < 0:
+
+        return 0xE74C3C
+
+
+    # Niebieski = 0 EXP
+    if gain_today == 0:
+
+        return 0x3498DB
+
+
+    # Zielony = dodatni EXP
+    return 0x2ECC71
+
+
+def format_change(value):
+
+    if value > 0:
+
+        return f"(+{value})"
+
+
+    if value < 0:
+
+        return f"({value})"
+
+
+    return ""
+
 
 # ======================
 # MAIN
@@ -634,8 +1003,13 @@ def main():
 
     print("BOT START")
 
-    # Wczytujemy historię, aby znać ostatni ranking
+
+    # ======================
+    # WCZYTANIE HISTORII
+    # ======================
+
     history = load_history()
+
 
     last_rank = (
         history[-1].get("rank")
@@ -643,18 +1017,31 @@ def main():
         else None
     )
 
-    # Inteligentne wyszukiwanie highscores
-    highscore = fetch_highscore(last_rank)
+
+    # ======================
+    # HIGH SCORES
+    # ======================
+
+    highscore = fetch_highscore(
+        last_rank
+    )
+
 
     if not highscore:
 
         send_discord(
-            f"⚠️ Nie znaleziono {CHAR_NAME}"
+            message=f"⚠️ Nie znaleziono {CHAR_NAME}"
         )
 
         return
 
+
+    # ======================
+    # CHARACTER
+    # ======================
+
     character = fetch_character_data()
+
 
     level = highscore["level"]
 
@@ -662,7 +1049,9 @@ def main():
 
     rank = highscore["rank"]
 
+
     achievements = "?"
+
 
     if character:
 
@@ -671,11 +1060,47 @@ def main():
             "?"
         )
 
-    # data wg doby Tibii
+
+    # ======================
+    # POPRZEDNI STAN
+    # ======================
+
+    if history:
+
+        previous_record = history[-1]
+
+        previous_exp = previous_record.get(
+            "exp",
+            exp
+        )
+
+        previous_level = previous_record.get(
+            "level",
+            level
+        )
+
+        previous_rank = previous_record.get(
+            "rank",
+            rank
+        )
+
+    else:
+
+        previous_exp = exp
+        previous_level = level
+        previous_rank = rank
+
+
+    # ======================
+    # DATA TIBIA
+    # ======================
 
     today = tibia_date()
 
-    # Historia została już wczytana wyżej
+
+    # ======================
+    # AKTUALIZACJA HISTORII
+    # ======================
 
     history = update_today(
         history,
@@ -688,26 +1113,38 @@ def main():
         }
     )
 
+
     save_history(history)
 
 
+    # ======================
+    # STATYSTYKI
+    # ======================
 
-    gain_today = daily_gain(history)
+    gain_today = daily_gain(
+        history
+    )
+
 
     gain_week = gain_from_days(
         history,
         7
     )
 
+
     gain_month = gain_current_month(
         history
     )
 
 
-    avg = average_daily(history)
+    avg = average_daily(
+        history
+    )
 
-    avg_month = average_month(history)
 
+    avg_month = average_month(
+        history
+    )
 
 
     best, best_date = biggest_daily(
@@ -715,37 +1152,250 @@ def main():
     )
 
 
+    # ======================
+    # ZMIANY
+    # ======================
 
-    message = f"""
-🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
-
-⭐ LVL **{level}** | 🏆 Rank **#{rank}**
-✨ Current EXP: **{exp:,}**
-
-📈 Today: **+{format_exp(gain_today)}**
-📅 7 days: **+{format_exp(gain_week)}**
-📆 Month: **+{format_exp(gain_month)}**
-📉 Next LVL {level + 1}: **{format_exp(exp_for_level(level + 1) - exp)}**
-
-⚡ Avg/day: **{format_exp(int(avg))}**
-⚡ Avg month: **{format_exp(int(avg_month))}**
-
-🚀 Total gain: **+{format_exp(exp_since_start(history))} EXP**
-🆙 Levels: **+{levels_since_start(history)}**
-🔥 Best: **+{format_exp(best)} ({best_date})**
-
-🤖 Bot: **{bot_days(history)} days**
-📅 Since: **{history[0]["date"]}**
-🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
-"""
+    level_change = (
+        level -
+        previous_level
+    )
 
 
-    send_discord(message)
+    rank_change = (
+        previous_rank -
+        rank
+    )
+
+
+    level_up = (
+        level_change > 0
+    )
+
+
+    # ======================
+    # PROGRESS BAR
+    # ======================
+
+    progress_bar = build_progress_bars(
+        exp,
+        level,
+        previous_exp,
+        previous_level
+    )
+
+
+    # ======================
+    # KOLOR
+    # ======================
+
+    embed_color = get_embed_color(
+        gain_today,
+        level_up
+    )
+
+
+    # ======================
+    # LEVEL / RANK
+    # ======================
+
+    level_change_text = format_change(
+        level_change
+    )
+
+    rank_change_text = format_change(
+        rank_change
+    )
+
+
+    level_text = (
+        f"**{level}** "
+        f"{level_change_text}"
+        if level_change_text
+        else
+        f"**{level}**"
+    )
+
+
+    rank_text = (
+        f"**#{rank}** "
+        f"{rank_change_text}"
+        if rank_change_text
+        else
+        f"**#{rank}**"
+    )
+
+
+    # ======================
+    # NEXT LEVEL
+    # ======================
+
+    next_level_exp = (
+        exp_for_level(level + 1)
+        -
+        exp
+    )
+
+
+    # ======================
+    # EMBED
+    # ======================
+
+    embed = {
+
+        "title": (
+            f"🌙 Daily EXP Report: "
+            f"{CHAR_NAME} 🏹"
+        ),
+
+
+        "color": embed_color,
+
+
+        "fields": [
+
+            {
+                "name": "⭐ Level",
+                "value": level_text,
+                "inline": True
+            },
+
+
+            {
+                "name": "🏆 Rank",
+                "value": rank_text,
+                "inline": True
+            },
+
+
+            {
+                "name": "✨ Current EXP",
+                "value": f"**{exp:,}**",
+                "inline": False
+            },
+
+
+            {
+                "name": "📈 Today",
+                "value": (
+                    f"**{format_exp(gain_today)}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "📅 7 days",
+                "value": (
+                    f"**{format_exp(gain_week)}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "📆 Month",
+                "value": (
+                    f"**{format_exp(gain_month)}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "📉 Next LVL "
+                         f"{level + 1}",
+                "value": (
+                    f"**{format_exp(next_level_exp)}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "⚡ Avg/day",
+                "value": (
+                    f"**{format_exp(int(avg))}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "⚡ Avg/month",
+                "value": (
+                    f"**{format_exp(int(avg_month))}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "📊 Progress",
+                "value": progress_bar,
+                "inline": False
+            },
+
+
+            {
+                "name": "🚀 Total gain",
+                "value": (
+                    f"**+{format_exp(exp_since_start(history))} EXP**"
+                ),
+
+
+            {
+                "name": "🆙 Levels",
+                "value": (
+                    f"**+"
+                    f"{levels_since_start(history)}**"
+                ),
+                "inline": True
+            },
+
+
+            {
+                "name": "🔥 Best",
+                "value": (
+                    f"**+"
+                    f"{format_exp(best)}** "
+                    f"({best_date})"
+                ),
+                "inline": True
+            }
+
+        ],
+
+
+        "footer": {
+
+            "text": (
+                f"🤖 Bot: {bot_days(history)} days"
+                f" • Since: {history[0]['date']}"
+                f" • Tibia reset: "
+                f"{tibia_day_start().strftime('%d.%m %H:%M')}"
+            )
+
+        }
+
+    }
+
+
+    # ======================
+    # WYSŁANIE
+    # ======================
+
+    send_discord(
+        embed=embed
+    )
 
 
     print("BOT END")
 
 
+# ======================
+# START
+# ======================
 
 if __name__ == "__main__":
 
