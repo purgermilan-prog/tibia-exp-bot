@@ -688,7 +688,7 @@ def main():
         }
     )
 
-    save_history(history))
+    save_history(history)
 
 
 
