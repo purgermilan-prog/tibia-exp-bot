@@ -730,8 +730,7 @@ level_change = level - previous_level
 # - = spadek
 rank_change = previous_rank - rank
 
-
-# ======================
+====================
 # PROCENTY EXP
 # ======================
 
@@ -750,10 +749,7 @@ level_range = (
 
 
     best, best_date = biggest_daily(
-        history
-)
-
-
+        history 
 
     message = f"""
 🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
