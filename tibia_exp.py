@@ -702,6 +702,45 @@ def main():
     gain_month = gain_current_month(
         history
     )
+# ======================
+# ZMIANY LVL / RANK
+# ======================
+
+if len(history) >= 2:
+
+    previous = history[-2]
+
+    previous_level = previous["level"]
+    previous_rank = previous["rank"]
+    previous_exp = previous["exp"]
+
+else:
+
+    previous_level = level
+    previous_rank = rank
+    previous_exp = exp
+
+
+# Zmiana levela
+level_change = level - previous_level
+
+
+# Zmiana rankingu
+# + = awans w rankingu
+# - = spadek
+rank_change = previous_rank - rank
+
+
+# ======================
+# PROCENTY EXP
+# ======================
+
+# EXP potrzebny na cały aktualny level
+current_level_start = exp_for_level(level)
+next_level_start = exp_for_level(level + 1)
+
+level_range = (
+    next
 
 
     avg = average_daily(history)
@@ -719,13 +758,13 @@ def main():
     message = f"""
 🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
 
-⭐ LVL **{level}** | 🏆 Rank **#{rank}**
+⭐ LVL **{level} ({level_change:+d})** | 🏆 Rank **#{rank} ({rank_change:+d})**
 ✨ Current EXP: **{exp:,}**
 
-📈 Today: **+{format_exp(gain_today)}**
+📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
-📉 Next LVL {level + 1}: **{format_exp(exp_for_level(level + 1) - exp)}**
+📉 Next LVL {level + 1}: **{format_exp(exp_for_level(level + 1) - exp)} ({next_level_percent}% remaining)**
 
 ⚡ Avg/day: **{format_exp(int(avg))}**
 ⚡ Avg month: **{format_exp(int(avg_month))}**
