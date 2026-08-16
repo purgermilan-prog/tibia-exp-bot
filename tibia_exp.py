@@ -751,7 +751,7 @@ level_range = (
 
     best, best_date = biggest_daily(
         history
-    )
+)
 
 
 
