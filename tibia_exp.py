@@ -1033,25 +1033,24 @@ def main():
     # ======================
 
     message = f"""
-🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
+🌙 **Daily Exp Report: {CHAR_NAME} 🏹**
 
-⭐ LVL {level_text} | 🏆 Rank {rank_text}
-✨ Current EXP: **{exp:,}**
+⭐ Level {level_text} | 🏆 Rank {rank_text}
+✨ Current Exp: **{exp:,}**
 
-📈 Today: **+{format_exp(gain_today)} ({today_percent})**
+📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
 📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent}% remaining)**
 
-⚡ Avg/day: **{format_exp(int(avg))}**
+⚡ Avg day: **{format_exp(int(avg))}**
 ⚡ Avg month: **{format_exp(int(avg_month))}**
 
 🚀 Total gain: **+{format_exp(exp_since_start(history))} EXP**
 🆙 Levels: **+{levels_since_start(history)}**
 🔥 Best: **+{format_exp(best)} ({best_date})**
 
-🤖 Bot: **{bot_days(history)} days**
-📅 Since: **{history[0]["date"]}**
+🤖 Bot: **{bot_days(history)} days** 📅 Since: **{history[0]["date"]}**
 🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
 """
 
