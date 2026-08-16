@@ -625,7 +625,6 @@ def send_discord(message):
         time.sleep(3)
 
 
-
 # ======================
 # MAIN
 # ======================
@@ -634,7 +633,11 @@ def main():
 
     print("BOT START")
 
-    # Wczytujemy historię, aby znać ostatni ranking
+
+    # ======================
+    # WCZYTANIE HISTORII
+    # ======================
+
     history = load_history()
 
     last_rank = (
@@ -643,7 +646,11 @@ def main():
         else None
     )
 
-    # Inteligentne wyszukiwanie highscores
+
+    # ======================
+    # HIGH SCORES
+    # ======================
+
     highscore = fetch_highscore(last_rank)
 
     if not highscore:
@@ -654,13 +661,17 @@ def main():
 
         return
 
+
+    # ======================
+    # CHARACTER
+    # ======================
+
     character = fetch_character_data()
 
     level = highscore["level"]
-
     exp = highscore["value"]
-
     rank = highscore["rank"]
+
 
     achievements = "?"
 
@@ -671,11 +682,47 @@ def main():
             "?"
         )
 
-    # data wg doby Tibii
+
+    # ======================
+    # POPRZEDNI STAN
+    # ======================
+
+    if history:
+
+        previous = history[-1]
+
+        previous_level = previous.get(
+            "level",
+            level
+        )
+
+        previous_rank = previous.get(
+            "rank",
+            rank
+        )
+
+        previous_exp = previous.get(
+            "exp",
+            exp
+        )
+
+    else:
+
+        previous_level = level
+        previous_rank = rank
+        previous_exp = exp
+
+
+    # ======================
+    # DATA TIBIA
+    # ======================
 
     today = tibia_date()
 
-    # Historia została już wczytana wyżej
+
+    # ======================
+    # AKTUALIZACJA HISTORII
+    # ======================
 
     history = update_today(
         history,
@@ -691,6 +738,9 @@ def main():
     save_history(history)
 
 
+    # ======================
+    # STATYSTYKI
+    # ======================
 
     gain_today = daily_gain(history)
 
@@ -702,65 +752,296 @@ def main():
     gain_month = gain_current_month(
         history
     )
-# ======================
-# ZMIANY LVL / RANK
-# ======================
 
-if len(history) >= 2:
+    avg = average_daily(
+        history
+    )
 
-    previous = history[-2]
-
-    previous_level = previous["level"]
-    previous_rank = previous["rank"]
-    previous_exp = previous["exp"]
-
-else:
-
-    previous_level = level
-    previous_rank = rank
-    previous_exp = exp
-
-
-# Zmiana levela
-level_change = level - previous_level
-
-
-# Zmiana rankingu
-# + = awans w rankingu
-# - = spadek
-rank_change = previous_rank - rank
-
-====================
-# PROCENTY EXP
-# ======================
-
-# EXP potrzebny na cały aktualny level
-current_level_start = exp_for_level(level)
-next_level_start = exp_for_level(level + 1)
-
-level_range = (
-    next
-
-
-    avg = average_daily(history)
-
-    avg_month = average_month(history)
-
-
+    avg_month = average_month(
+        history
+    )
 
     best, best_date = biggest_daily(
-        history 
+        history
+    )
+
+
+    # ======================
+    # ZMIANY LVL / RANK
+    # ======================
+
+    level_change = (
+        level -
+        previous_level
+    )
+
+    # + = awans w rankingu
+    # - = spadek w rankingu
+
+    rank_change = (
+        previous_rank -
+        rank
+    )
+
+
+    # ======================
+    # PROCENTY EXP
+    # ======================
+
+    # EXP wymagany od początku
+    # aktualnego levela
+
+    current_level_start = exp_for_level(
+        level
+    )
+
+    # EXP wymagany do następnego levela
+
+    next_level_start = exp_for_level(
+        level + 1
+    )
+
+    # Cały zakres aktualnego levela
+
+    level_range = (
+        next_level_start -
+        current_level_start
+    )
+
+
+    # ======================
+    # % POZOSTAŁEGO LEVELA
+    # ======================
+
+    if level_range > 0:
+
+        remaining_exp = (
+            next_level_start -
+            exp
+        )
+
+        next_level_percent = (
+            remaining_exp /
+            level_range
+        ) * 100
+
+        next_level_percent = round(
+            max(
+                0,
+                min(
+                    100,
+                    next_level_percent
+                )
+            )
+        )
+
+    else:
+
+        next_level_percent = 0
+
+
+    # ======================
+    # % EXP WBITEGO DZISIAJ
+    # ======================
+
+    # Jeżeli nie mamy poprzedniego
+    # zapisu, nie próbujemy zgadywać.
+
+    if not history or len(history) < 2:
+
+        today_percent = 0
+
+
+    # ======================
+    # NORMALNY DZIEŃ
+    # ======================
+
+    elif level == previous_level:
+
+        if level_range > 0:
+
+            today_percent = (
+                gain_today /
+                level_range
+            ) * 100
+
+            today_percent = round(
+                max(
+                    0,
+                    today_percent
+                )
+            )
+
+        else:
+
+            today_percent = 0
+
+
+    # ======================
+    # LEVEL UP
+    # ======================
+
+    else:
+
+        # ----------------------
+        # STARY LEVEL
+        # ----------------------
+
+        old_level_start = exp_for_level(
+            previous_level
+        )
+
+        old_level_end = exp_for_level(
+            previous_level + 1
+        )
+
+        old_level_range = (
+            old_level_end -
+            old_level_start
+        )
+
+
+        if old_level_range > 0:
+
+            # Ile EXP brakowało
+            # do starego levela
+
+            old_remaining = (
+                old_level_end -
+                previous_exp
+            )
+
+            old_percent = (
+                old_remaining /
+                old_level_range
+            ) * 100
+
+            old_percent = round(
+                max(
+                    0,
+                    min(
+                        100,
+                        old_percent
+                    )
+                )
+            )
+
+        else:
+
+            old_percent = 0
+
+
+        # ----------------------
+        # NOWY LEVEL
+        # ----------------------
+
+        new_level_start = exp_for_level(
+            level
+        )
+
+        new_level_end = exp_for_level(
+            level + 1
+        )
+
+        new_level_range = (
+            new_level_end -
+            new_level_start
+        )
+
+
+        if new_level_range > 0:
+
+            new_exp = (
+                exp -
+                new_level_start
+            )
+
+            new_percent = (
+                new_exp /
+                new_level_range
+            ) * 100
+
+            new_percent = round(
+                max(
+                    0,
+                    min(
+                        100,
+                        new_percent
+                    )
+                )
+            )
+
+        else:
+
+            new_percent = 0
+
+
+        # Wynik np.
+        # 25% → LVL UP → 10%
+
+        today_percent = (
+            f"{old_percent}% "
+            f"→ LVL UP → "
+            f"{new_percent}%"
+        )
+
+
+    # ======================
+    # TEKST ZMIAN
+    # ======================
+
+    if level_change > 0:
+
+        level_text = (
+            f"**{level} (+{level_change})**"
+        )
+
+    elif level_change < 0:
+
+        level_text = (
+            f"**{level} ({level_change})**"
+        )
+
+    else:
+
+        level_text = (
+            f"**{level}**"
+        )
+
+
+    if rank_change > 0:
+
+        rank_text = (
+            f"**#{rank} (+{rank_change})**"
+        )
+
+    elif rank_change < 0:
+
+        rank_text = (
+            f"**#{rank} ({rank_change})**"
+        )
+
+    else:
+
+        rank_text = (
+            f"**#{rank}**"
+        )
+
+
+    # ======================
+    # DISCORD MESSAGE
+    # ======================
 
     message = f"""
 🌙 **Daily EXP Report: {CHAR_NAME} 🏹**
 
-⭐ LVL **{level} ({level_change:+d})** | 🏆 Rank **#{rank} ({rank_change:+d})**
+⭐ LVL {level_text} | 🏆 Rank {rank_text}
 ✨ Current EXP: **{exp:,}**
 
-📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**
+📈 Today: **+{format_exp(gain_today)} ({today_percent})**
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
-📉 Next LVL {level + 1}: **{format_exp(exp_for_level(level + 1) - exp)} ({next_level_percent}% remaining)**
+📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent}% remaining)**
 
 ⚡ Avg/day: **{format_exp(int(avg))}**
 ⚡ Avg month: **{format_exp(int(avg_month))}**
@@ -775,13 +1056,22 @@ level_range = (
 """
 
 
-    send_discord(message)
+    # ======================
+    # WYSŁANIE
+    # ======================
+
+    send_discord(
+        message
+    )
 
 
     print("BOT END")
 
 
+# ======================
+# START
+# ======================
 
 if __name__ == "__main__":
 
-    main()
+    main() 
