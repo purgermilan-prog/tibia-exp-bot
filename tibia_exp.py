@@ -631,8 +631,9 @@ def send_discord(message):
 
 def main():
 
-    print("BOT START")
-
+    print("=" * 60)
+    print("Tibia EXP Bot")
+    print("=" * 60)
 
     # ======================
     # WCZYTANIE HISTORII
@@ -640,47 +641,81 @@ def main():
 
     history = load_history()
 
-    last_rank = (
-        history[-1].get("rank")
-        if history
-        else None
+    print(
+        f"History entries: {len(history)}"
     )
 
+    # Historia jest DICT-em, więc nie używamy history[-1]
+    last_rank = None
+
+    if history:
+
+        dates = sorted(history.keys())
+
+        last_date = dates[-1]
+
+        last_rank = history[
+            last_date
+        ].get("rank")
+
+    print(
+        f"Last known rank: #{last_rank}"
+        if last_rank
+        else
+        "Last known rank: none"
+    )
 
     # ======================
     # HIGH SCORES
     # ======================
 
-    highscore = fetch_highscore(last_rank)
+    highscore = fetch_highscore(
+        last_rank
+    )
 
     if not highscore:
 
-        send_discord(
-            f"⚠️ Nie znaleziono {CHAR_NAME}"
+        print(
+            f"ERROR: Nie znaleziono {CHAR_NAME}"
         )
 
         return
 
-
     # ======================
-    # CHARACTER
+    # DANE Z HIGHSCORE
     # ======================
-
-    character = fetch_character_data()
 
     level = highscore["level"]
+
     exp = highscore["value"]
+
     rank = highscore["rank"]
 
+    print(
+        f"Found {CHAR_NAME}"
+    )
 
-    achievements = "?"
+    print(
+        f"Level: {level}"
+    )
 
-    if character:
+    print(
+        f"EXP: {exp:,}"
+    )
 
-        achievements = character.get(
-            "achievement_points",
-            "?"
-        )
+    print(
+        f"Rank: #{rank}"
+    )
+
+    # ======================
+    # DATA TIBII
+    # ======================
+
+    today = tibia_date()
+
+    print(
+        f"Tibia day: {today}"
+    )
 
 
     # ======================
