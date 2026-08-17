@@ -113,13 +113,16 @@ def api_get(url):
                 }
             )
 
+
             if response.status_code == 200:
 
                 return response.json()
 
+
             print(
                 f"API error {response.status_code}"
             )
+
 
         except Exception as e:
 
@@ -127,9 +130,12 @@ def api_get(url):
                 f"API exception: {e}"
             )
 
+
         time.sleep(3)
 
+
     return None
+
 
 
 # ======================
@@ -144,19 +150,24 @@ def fetch_character_data():
         CHAR_NAME.replace(" ", "%20")
     )
 
+
     data = api_get(url)
+
 
     if not data:
 
         return None
 
+
     try:
 
         return data["character"]["character"]
 
+
     except Exception:
 
         return None
+
 
 
 # ======================
@@ -167,19 +178,16 @@ def fetch_highscore(last_rank=None):
 
     print("Searching highscores (smart search)...")
 
-    # Pobieramy pierwszą stronę,
-    # aby poznać liczbę stron
+    # Pobieramy pierwszą stronę, aby poznać liczbę stron
     first = api_get(
         f"https://api.tibiadata.com/v4/highscores/"
         f"{WORLD}/experience/all/1"
     )
 
     if not first:
-
         return None
 
     try:
-
         pages = (
             first["highscores"]
             ["highscore_page"]
@@ -187,7 +195,6 @@ def fetch_highscore(last_rank=None):
         )
 
     except Exception:
-
         pages = 50
 
     target_pages = []
@@ -197,10 +204,7 @@ def fetch_highscore(last_rank=None):
         # Poprawne wyliczenie strony
         estimated_page = max(
             1,
-            min(
-                (last_rank - 1) // 50 + 1,
-                pages
-            )
+            min((last_rank - 1) // 50 + 1, pages)
         )
 
         neighbors = [
@@ -211,13 +215,10 @@ def fetch_highscore(last_rank=None):
             estimated_page + 2
         ]
 
+        target_pages = []
+
         for page in neighbors:
-
-            if (
-                1 <= page <= pages
-                and page not in target_pages
-            ):
-
+            if 1 <= page <= pages and page not in target_pages:
                 target_pages.append(page)
 
     remaining_pages = [
@@ -226,10 +227,7 @@ def fetch_highscore(last_rank=None):
         if p not in target_pages
     ]
 
-    search_order = (
-        target_pages +
-        remaining_pages
-    )
+    search_order = target_pages + remaining_pages
 
     for page in search_order:
 
@@ -239,7 +237,6 @@ def fetch_highscore(last_rank=None):
         )
 
         if not data:
-
             continue
 
         try:
@@ -250,7 +247,6 @@ def fetch_highscore(last_rank=None):
             )
 
         except Exception:
-
             continue
 
         for player in players:
