@@ -4,7 +4,6 @@ import json
 import time
 from datetime import datetime, timedelta
 
-
 # ======================
 # KONFIGURACJA
 # ======================
@@ -19,41 +18,35 @@ SAVE_FILE = "exp_history.json"
 API_RETRIES = 3
 API_TIMEOUT = 20
 
-
 # ======================
 # CZAS TIBII
 # ======================
 
 def tibia_datetime():
 
-    now = datetime.now()
+now = datetime.now()  
 
-    # Tibia resetuje dobę o 10:00
-    if now.hour < 10:
+\# Tibia resetuje dobę o 10:00  
+if now\.hour < 10:  
 
-        now -= timedelta(days=1)
+    now -= timedelta(days=1)  
 
-    return now
-
-
+return now
 
 def tibia_date():
 
-    return tibia_datetime().date().isoformat()
-
-
+return tibia\_datetime().date().isoformat()
 
 def tibia_day_start():
 
-    now = tibia_datetime()
+now = tibia\_datetime()  
 
-    return now.replace(
-        hour=10,
-        minute=0,
-        second=0,
-        microsecond=0
-    )
-
+return now\.replace(  
+    hour=10,  
+    minute=0,  
+    second=0,  
+    microsecond=0  
+)
 
 # ======================
 # FORMAT EXP
@@ -61,16 +54,14 @@ def tibia_day_start():
 
 def format_exp(value):
 
-    # 1 000 EXP = 1k
-    # 1 000 000 EXP = 1000k
+\# 1 000 EXP = 1k  
+\# 1 000 000 EXP = 1000k  
 
-    if value >= 1000:
+if value >= 1000:  
 
-        return f"{value/1000:,.0f}k"
+    return f"{value/1000:,.0f}k"  
 
-    return str(value)
-
-
+return str(value)
 
 # ======================
 # EXP TIBIA
@@ -78,21 +69,20 @@ def format_exp(value):
 
 def exp_for_level(level):
 
-    x = level
+x = level  
 
-    return int(
-        (50 / 3) *
-        (
-            x**3
-            -
-            6*x**2
-            +
-            17*x
-            -
-            12
-        )
-    )
-
+return int(  
+    (50 / 3) \*  
+    (  
+        x\*\*3  
+        \-  
+        6\*x\*\*2  
+        \+  
+        17\*x  
+        \-  
+        12  
+    )  
+)
 
 # ======================
 # API
@@ -100,43 +90,41 @@ def exp_for_level(level):
 
 def api_get(url):
 
-    for attempt in range(1, API_RETRIES + 1):
+for attempt in range(1, API\_RETRIES + 1):  
 
-        try:
+    try:  
 
-            response = requests.get(
-                url,
-                timeout=API_TIMEOUT,
-                headers={
-                    "User-Agent":
-                    "TibiaEXPBot/1.0"
-                }
-            )
-
-
-            if response.status_code == 200:
-
-                return response.json()
+        response = requests.get(  
+            url,  
+            timeout=API\_TIMEOUT,  
+            headers={  
+                "User-Agent":  
+                "TibiaEXPBot/1.0"  
+            }  
+        )  
 
 
-            print(
-                f"API error {response.status_code}"
-            )
+        if response.status\_code == 200:  
+
+            return response.json()  
 
 
-        except Exception as e:
-
-            print(
-                f"API exception: {e}"
-            )
+        print(  
+            f"API error {response.status\_code}"  
+        )  
 
 
-        time.sleep(3)
+    except Exception as e:  
+
+        print(  
+            f"API exception: {e}"  
+        )  
 
 
-    return None
+    time.sleep(3)  
 
 
+return None
 
 # ======================
 # CHARACTER
@@ -144,31 +132,29 @@ def api_get(url):
 
 def fetch_character_data():
 
-    url = (
-        "https://api.tibiadata.com/v4/character/"
-        +
-        CHAR_NAME.replace(" ", "%20")
-    )
+url = (  
+    "[https://api.tibiadata.com/v4/character/](https://api.tibiadata.com/v4/character/)"  
+    \+  
+    CHAR\_NAME.replace(" ", "%20")  
+)  
 
 
-    data = api_get(url)
+data = api\_get(url)  
 
 
-    if not data:
+if not data:  
 
-        return None
-
-
-    try:
-
-        return data["character"]["character"]
+    return None  
 
 
-    except Exception:
+try:  
 
-        return None
+    return data["character"]["character"]  
 
 
+except Exception:  
+
+    return None
 
 # ======================
 # HIGHSCORE (ZOPTYMALIZOWANE)
@@ -176,167 +162,162 @@ def fetch_character_data():
 
 def fetch_highscore(last_rank=None):
 
-    print("Searching highscores (smart search)...")
+print("Searching highscores (smart search)...")  
 
-    # Pobieramy pierwszą stronę, aby poznać liczbę stron
-    first = api_get(
-        f"https://api.tibiadata.com/v4/highscores/"
-        f"{WORLD}/experience/all/1"
-    )
+\# Pobieramy pierwszą stronę, aby poznać liczbę stron  
+first = api\_get(  
+    f"[https://api.tibiadata.com/v4/highscores/](https://api.tibiadata.com/v4/highscores/)"  
+    f"{WORLD}/experience/all/1"  
+)  
 
-    if not first:
-        return None
+if not first:  
+    return None  
 
-    try:
-        pages = (
-            first["highscores"]
-            ["highscore_page"]
-            ["total_pages"]
-        )
+try:  
+    pages = (  
+        first["highscores"]  
+        ["highscore\_page"]  
+        ["total\_pages"]  
+    )  
 
-    except Exception:
-        pages = 50
+except Exception:  
+    pages = 50  
 
-    target_pages = []
+target\_pages = []  
 
-    if last_rank:
+if last\_rank:  
 
-        # Poprawne wyliczenie strony
-        estimated_page = max(
-            1,
-            min((last_rank - 1) // 50 + 1, pages)
-        )
+    \# Poprawne wyliczenie strony  
+    estimated\_page = max(  
+        1,  
+        min((last\_rank - 1) // 50 + 1, pages)  
+    )  
 
-        neighbors = [
-            estimated_page - 2,
-            estimated_page - 1,
-            estimated_page,
-            estimated_page + 1,
-            estimated_page + 2
-        ]
+    neighbors = [  
+        estimated\_page - 2,  
+        estimated\_page - 1,  
+        estimated\_page,  
+        estimated\_page + 1,  
+        estimated\_page + 2  
+    ]  
 
-        target_pages = []
+    target\_pages = []  
 
-        for page in neighbors:
-            if 1 <= page <= pages and page not in target_pages:
-                target_pages.append(page)
+    for page in neighbors:  
+        if 1 <= page <= pages and page not in target\_pages:  
+            target\_pages.append(page)  
 
-    remaining_pages = [
-        p
-        for p in range(1, pages + 1)
-        if p not in target_pages
-    ]
+remaining\_pages = [  
+    p  
+    for p in range(1, pages + 1)  
+    if p not in target\_pages  
+]  
 
-    search_order = target_pages + remaining_pages
+search\_order = target\_pages + remaining\_pages  
 
-    for page in search_order:
+for page in search\_order:  
 
-        data = api_get(
-            f"https://api.tibiadata.com/v4/highscores/"
-            f"{WORLD}/experience/all/{page}"
-        )
+    data = api\_get(  
+        f"[https://api.tibiadata.com/v4/highscores/](https://api.tibiadata.com/v4/highscores/)"  
+        f"{WORLD}/experience/all/{page}"  
+    )  
 
-        if not data:
-            continue
+    if not data:  
+        continue  
 
-        try:
+    try:  
 
-            players = (
-                data["highscores"]
-                ["highscore_list"]
-            )
+        players = (  
+            data["highscores"]  
+            ["highscore\_list"]  
+        )  
 
-        except Exception:
-            continue
+    except Exception:  
+        continue  
 
-        for player in players:
+    for player in players:  
 
-            if (
-                player["name"].lower()
-                ==
-                CHAR_NAME.lower()
-            ):
+        if (  
+            player["name"].lower()  
+            \==  
+            CHAR\_NAME.lower()  
+        ):  
 
-                print(
-                    f"Found {CHAR_NAME} on page {page}"
-                )
+            print(  
+                f"Found {CHAR\_NAME} on page {page}"  
+            )  
 
-                return player
+            return player  
 
-    return None
+return None
+
 # ======================
 # HISTORIA
 # ======================
 
 def load_history():
 
-    if not os.path.exists(SAVE_FILE):
+if not os.path.exists(SAVE\_FILE):  
 
-        return []
-
-
-    try:
-
-        with open(
-            SAVE_FILE,
-            "r",
-            encoding="utf-8"
-        ) as file:
-
-            data = json.load(file)
+    return []  
 
 
-        return data.get(
-            "history",
-            []
-        )
+try:  
+
+    with open(  
+        SAVE\_FILE,  
+        "r",  
+        encoding="utf-8"  
+    ) as file:  
+
+        data = json.load(file)  
 
 
-    except Exception:
+    return data.get(  
+        "history",  
+        []  
+    )  
 
-        return []
 
+except Exception:  
 
+    return []
 
 def save_history(history):
 
-    with open(
-        SAVE_FILE,
-        "w",
-        encoding="utf-8"
-    ) as file:
+with open(  
+    SAVE\_FILE,  
+    "w",  
+    encoding="utf-8"  
+) as file:  
 
-        json.dump(
-            {
-                "history": history
-            },
-            file,
-            indent=2,
-            ensure_ascii=False
-        )
-
-
+    json.dump(  
+        {  
+            "history": history  
+        },  
+        file,  
+        indent=2,  
+        ensure\_ascii=False  
+    )
 
 def update_today(history, record):
 
-    today = record["date"]
+today = record["date"]  
 
 
-    for item in history:
+for item in history:  
 
-        if item["date"] == today:
+    if item["date"] == today:  
 
-            item.update(record)
+        item.update(record)  
 
-            return history
-
-
-
-    history.append(record)
-
-    return history
+        return history  
 
 
+
+history.append(record)  
+
+return history
 
 # ======================
 # STATYSTYKI
@@ -344,286 +325,270 @@ def update_today(history, record):
 
 def daily_gain(history):
 
-    if len(history) < 2:
+if len(history) < 2:  
 
-        return 0
-
-
-    return (
-        history[-1]["exp"]
-        -
-        history[-2]["exp"]
-    )
+    return 0  
 
 
+return (  
+    history[-1]["exp"]  
+    \-  
+    history[-2]["exp"]  
+)
 
 def gain_from_days(history, days):
 
-    if len(history) < 2:
+if len(history) < 2:  
 
-        return 0
-
-
-    current_day = datetime.fromisoformat(
-        tibia_date()
-    )
+    return 0  
 
 
-    limit = (
-        current_day -
-        timedelta(days=days)
-    ).date()
+current\_day = datetime.fromisoformat(  
+    tibia\_date()  
+)  
 
 
-    old = None
+limit = (  
+    current\_day -  
+    timedelta(days=days)  
+).date()  
 
 
-    for item in history:
-
-        item_date = datetime.fromisoformat(
-            item["date"]
-        ).date()
+old = None  
 
 
-        if item_date >= limit:
+for item in history:  
 
-            old = item
-
-            break
-
-
-    if old is None:
-
-        return 0
+    item\_date = datetime.fromisoformat(  
+        item["date"]  
+    ).date()  
 
 
-    return (
-        history[-1]["exp"]
-        -
-        old["exp"]
-    )
+    if item\_date >= limit:  
+
+        old = item  
+
+        break  
 
 
+if old is None:  
+
+    return 0  
+
+
+return (  
+    history[-1]["exp"]  
+    \-  
+    old["exp"]  
+)
 
 def gain_current_month(history):
 
-    month = tibia_date()[:7]
+month = tibia\_date()[:7]  
 
 
-    data = [
-        item for item in history
-        if item["date"].startswith(month)
-    ]
+data = [  
+    item for item in history  
+    if item["date"].startswith(month)  
+]  
 
 
-    if len(data) < 2:
+if len(data) < 2:  
 
-        return 0
-
-
-    return (
-        data[-1]["exp"]
-        -
-        data[0]["exp"]
-    )
+    return 0  
 
 
+return (  
+    data[-1]["exp"]  
+    \-  
+    data[0]["exp"]  
+)
 
 def average_daily(history):
 
-    if len(history) < 2:
+if len(history) < 2:  
 
-        return 0
-
-
-    first = datetime.fromisoformat(
-        history[0]["date"]
-    )
-
-    last = datetime.fromisoformat(
-        history[-1]["date"]
-    )
+    return 0  
 
 
-    days = (
-        last - first
-    ).days
+first = datetime.fromisoformat(  
+    history[0]["date"]  
+)  
+
+last = datetime.fromisoformat(  
+    history[-1]["date"]  
+)  
 
 
-    if days <= 0:
-
-        return 0
-
-
-    return (
-        history[-1]["exp"]
-        -
-        history[0]["exp"]
-    ) / days
+days = (  
+    last - first  
+).days  
 
 
+if days <= 0:  
+
+    return 0  
+
+
+return (  
+    history[-1]["exp"]  
+    \-  
+    history[0]["exp"]  
+) / days
 
 def average_month(history):
 
-    month = tibia_date()[:7]
+month = tibia\_date()[:7]  
 
 
-    data = [
-        item for item in history
-        if item["date"].startswith(month)
-    ]
+data = [  
+    item for item in history  
+    if item["date"].startswith(month)  
+]  
 
 
-    if len(data) < 2:
+if len(data) < 2:  
 
-        return 0
-
-
-    first = datetime.fromisoformat(
-        data[0]["date"]
-    )
-
-    last = datetime.fromisoformat(
-        data[-1]["date"]
-    )
+    return 0  
 
 
-    days = (
-        last - first
-    ).days
+first = datetime.fromisoformat(  
+    data[0]["date"]  
+)  
+
+last = datetime.fromisoformat(  
+    data[-1]["date"]  
+)  
 
 
-    if days <= 0:
-
-        return 0
-
-
-    return (
-        data[-1]["exp"]
-        -
-        data[0]["exp"]
-    ) / days
+days = (  
+    last - first  
+).days  
 
 
+if days <= 0:  
+
+    return 0  
+
+
+return (  
+    data[-1]["exp"]  
+    \-  
+    data[0]["exp"]  
+) / days
 
 def biggest_daily(history):
 
-    best = 0
+best = 0  
 
-    best_date = None
-
-
-    for index in range(1, len(history)):
-
-        gain = (
-            history[index]["exp"]
-            -
-            history[index - 1]["exp"]
-        )
+best\_date = None  
 
 
-        if gain > best:
+for index in range(1, len(history)):  
 
-            best = gain
+    gain = (  
+        history[index]["exp"]  
+        \-  
+        history[index - 1]["exp"]  
+    )  
 
-            best_date = history[index]["date"]
+
+    if gain > best:  
+
+        best = gain  
+
+        best\_date = history[index]["date"]  
 
 
-    return best, best_date
-
-
+return best, best\_date
 
 def exp_since_start(history):
 
-    if len(history) < 2:
+if len(history) < 2:  
 
-        return 0
-
-
-    return (
-        history[-1]["exp"]
-        -
-        history[0]["exp"]
-    )
+    return 0  
 
 
+return (  
+    history[-1]["exp"]  
+    \-  
+    history[0]["exp"]  
+)
 
 def levels_since_start(history):
 
-    if len(history) < 2:
+if len(history) < 2:  
 
-        return 0
-
-
-    return (
-        history[-1]["level"]
-        -
-        history[0]["level"]
-    )
+    return 0  
 
 
+return (  
+    history[-1]["level"]  
+    \-  
+    history[0]["level"]  
+)
 
 def bot_days(history):
 
-    if not history:
+if not history:  
 
-        return 0
-
-
-    start = datetime.fromisoformat(
-        history[0]["date"]
-    )
+    return 0  
 
 
-    today = datetime.fromisoformat(
-        tibia_date()
-    )
+start = datetime.fromisoformat(  
+    history[0]["date"]  
+)  
 
 
-    return (
-        today - start
-    ).days + 1
+today = datetime.fromisoformat(  
+    tibia\_date()  
+)  
+
+
+return (  
+    today - start  
+).days + 1
+
 # ======================
 # DISCORD
 # ======================
 
 def send_discord(message):
 
-    if not DISCORD_WEBHOOK_URL:
+if not DISCORD\_WEBHOOK\_URL:  
 
-        print(message)
+    print(message)  
 
-        return
-
-
-    for attempt in range(3):
-
-        try:
-
-            response = requests.post(
-                DISCORD_WEBHOOK_URL,
-                json={
-                    "content": message
-                },
-                timeout=15
-            )
+    return  
 
 
-            if response.status_code in [200, 204]:
+for attempt in range(3):  
 
-                return
+    try:  
+
+        response = requests.post(  
+            DISCORD\_WEBHOOK\_URL,  
+            json={  
+                "content": message  
+            },  
+            timeout=15  
+        )  
 
 
-        except Exception as e:
+        if response.status\_code in [200, 204]:  
 
-            print(
-                "Discord error:",
-                e
-            )
+            return  
 
 
-        time.sleep(3)
+    except Exception as e:  
 
+        print(  
+            "Discord error:",  
+            e  
+        )  
+
+
+    time.sleep(3)
 
 # ======================
 # MAIN
@@ -631,443 +596,409 @@ def send_discord(message):
 
 def main():
 
-    print("=" * 60)
-    print("Tibia EXP Bot")
-    print("=" * 60)
+print("BOT START")  
 
-    # ======================
-    # WCZYTANIE HISTORII
-    # ======================
 
-    history = load_history()
+\# ======================  
+\# WCZYTANIE HISTORII  
+\# ======================  
 
-    print(
-        f"History entries: {len(history)}"
-    )
+history = load\_history()  
 
-    # Historia jest DICT-em, więc nie używamy history[-1]
-    last_rank = None
+last\_rank = (  
+    history[-1].get("rank")  
+    if history  
+    else None  
+)  
 
-    if history:
 
-        dates = sorted(history.keys())
+\# ======================  
+\# HIGH SCORES  
+\# ======================  
 
-        last_date = dates[-1]
+highscore = fetch\_highscore(last\_rank)  
 
-        last_rank = history[
-            last_date
-        ].get("rank")
+if not highscore:  
 
-    print(
-        f"Last known rank: #{last_rank}"
-        if last_rank
-        else
-        "Last known rank: none"
-    )
+    send\_discord(  
+        f"⚠️ Nie znaleziono {CHAR\_NAME}"  
+    )  
 
-    # ======================
-    # HIGH SCORES
-    # ======================
+    return  
 
-    highscore = fetch_highscore(
-        last_rank
-    )
 
-    if not highscore:
+\# ======================  
+\# CHARACTER  
+\# ======================  
 
-        print(
-            f"ERROR: Nie znaleziono {CHAR_NAME}"
-        )
+character = fetch\_character\_data()  
 
-        return
+level = highscore["level"]  
+exp = highscore["value"]  
+rank = highscore["rank"]  
 
-    # ======================
-    # DANE Z HIGHSCORE
-    # ======================
 
-    level = highscore["level"]
+achievements = "?"  
 
-    exp = highscore["value"]
+if character:  
 
-    rank = highscore["rank"]
+    achievements = character.get(  
+        "achievement\_points",  
+        "?"  
+    )  
 
-    print(
-        f"Found {CHAR_NAME}"
-    )
 
-    print(
-        f"Level: {level}"
-    )
+\# ======================  
+\# POPRZEDNI STAN  
+\# ======================  
 
-    print(
-        f"EXP: {exp:,}"
-    )
+if history:  
 
-    print(
-        f"Rank: #{rank}"
-    )
+    previous = history[-1]  
 
-    # ======================
-    # DATA TIBII
-    # ======================
+    previous\_level = previous.get(  
+        "level",  
+        level  
+    )  
 
-    today = tibia_date()
+    previous\_rank = previous.get(  
+        "rank",  
+        rank  
+    )  
 
-    print(
-        f"Tibia day: {today}"
-    )
+    previous\_exp = previous.get(  
+        "exp",  
+        exp  
+    )  
 
+else:  
 
-    # ======================
-    # POPRZEDNI STAN
-    # ======================
+    previous\_level = level  
+    previous\_rank = rank  
+    previous\_exp = exp  
 
-    if history:
 
-        previous = history[-1]
+\# ======================  
+\# DATA TIBIA  
+\# ======================  
 
-        previous_level = previous.get(
-            "level",
-            level
-        )
+today = tibia\_date()  
 
-        previous_rank = previous.get(
-            "rank",
-            rank
-        )
 
-        previous_exp = previous.get(
-            "exp",
-            exp
-        )
+\# ======================  
+\# AKTUALIZACJA HISTORII  
+\# ======================  
 
-    else:
+history = update\_today(  
+    history,  
+    {  
+        "date": today,  
+        "exp": exp,  
+        "level": level,  
+        "rank": rank,  
+        "achievement\_points": achievements  
+    }  
+)  
 
-        previous_level = level
-        previous_rank = rank
-        previous_exp = exp
+save\_history(history)  
 
 
-    # ======================
-    # DATA TIBIA
-    # ======================
+\# ======================  
+\# STATYSTYKI  
+\# ======================  
 
-    today = tibia_date()
+gain\_today = daily\_gain(history)  
 
+gain\_week = gain\_from\_days(  
+    history,  
+    7  
+)  
 
-    # ======================
-    # AKTUALIZACJA HISTORII
-    # ======================
+gain\_month = gain\_current\_month(  
+    history  
+)  
 
-    history = update_today(
-        history,
-        {
-            "date": today,
-            "exp": exp,
-            "level": level,
-            "rank": rank,
-            "achievement_points": achievements
-        }
-    )
+avg = average\_daily(  
+    history  
+)  
 
-    save_history(history)
+avg\_month = average\_month(  
+    history  
+)  
 
+best, best\_date = biggest\_daily(  
+    history  
+)  
 
-    # ======================
-    # STATYSTYKI
-    # ======================
 
-    gain_today = daily_gain(history)
+\# ======================  
+\# ZMIANY LVL / RANK  
+\# ======================  
 
-    gain_week = gain_from_days(
-        history,
-        7
-    )
+level\_change = (  
+    level -  
+    previous\_level  
+)  
 
-    gain_month = gain_current_month(
-        history
-    )
+\# + = awans w rankingu  
+\# - = spadek w rankingu  
 
-    avg = average_daily(
-        history
-    )
+rank\_change = (  
+    previous\_rank -  
+    rank  
+)  
 
-    avg_month = average_month(
-        history
-    )
 
-    best, best_date = biggest_daily(
-        history
-    )
+\# ======================  
+\# PROCENTY EXP  
+\# ======================  
 
+\# EXP wymagany od początku  
+\# aktualnego levela  
 
-    # ======================
-    # ZMIANY LVL / RANK
-    # ======================
+current\_level\_start = exp\_for\_level(  
+    level  
+)  
 
-    level_change = (
-        level -
-        previous_level
-    )
+\# EXP wymagany do następnego levela  
 
-    # + = awans w rankingu
-    # - = spadek w rankingu
+next\_level\_start = exp\_for\_level(  
+    level + 1  
+)  
 
-    rank_change = (
-        previous_rank -
-        rank
-    )
+\# Cały zakres aktualnego levela  
 
+level\_range = (  
+    next\_level\_start -  
+    current\_level\_start  
+)  
 
-    # ======================
-    # PROCENTY EXP
-    # ======================
 
-    # EXP wymagany od początku
-    # aktualnego levela
+\# ======================  
+\# % POZOSTAŁEGO LEVELA  
+\# ======================  
 
-    current_level_start = exp_for_level(
-        level
-    )
+if level\_range > 0:  
 
-    # EXP wymagany do następnego levela
+    remaining\_exp = (  
+        next\_level\_start -  
+        exp  
+    )  
 
-    next_level_start = exp_for_level(
-        level + 1
-    )
+    next\_level\_percent = (  
+        remaining\_exp /  
+        level\_range  
+    ) \* 100  
 
-    # Cały zakres aktualnego levela
+    next\_level\_percent = round(  
+        max(  
+            0,  
+            min(  
+                100,  
+                next\_level\_percent  
+            )  
+        )  
+    )  
 
-    level_range = (
-        next_level_start -
-        current_level_start
-    )
+else:  
 
+    next\_level\_percent = 0  
 
-    # ======================
-    # % POZOSTAŁEGO LEVELA
-    # ======================
 
-    if level_range > 0:
+\# ======================  
+\# % EXP WBITEGO DZISIAJ  
+\# ======================  
 
-        remaining_exp = (
-            next_level_start -
-            exp
-        )
+\# Jeżeli nie mamy poprzedniego  
+\# zapisu, nie próbujemy zgadywać.  
 
-        next_level_percent = (
-            remaining_exp /
-            level_range
-        ) * 100
+if not history or len(history) < 2:  
 
-        next_level_percent = round(
-            max(
-                0,
-                min(
-                    100,
-                    next_level_percent
-                )
-            )
-        )
+    today\_percent = 0  
 
-    else:
 
-        next_level_percent = 0
+\# ======================  
+\# NORMALNY DZIEŃ  
+\# ======================  
 
+elif level == previous\_level:  
 
-    # ======================
-    # % EXP WBITEGO DZISIAJ
-    # ======================
+    if level\_range > 0:  
 
-    # Jeżeli nie mamy poprzedniego
-    # zapisu, nie próbujemy zgadywać.
+        today\_percent = (  
+            gain\_today /  
+            level\_range  
+        ) \* 100  
 
-    if not history or len(history) < 2:
+        today\_percent = round(  
+            max(  
+                0,  
+                today\_percent  
+            )  
+        )  
 
-        today_percent = 0
+    else:  
 
+        today\_percent = 0  
 
-    # ======================
-    # NORMALNY DZIEŃ
-    # ======================
 
-    elif level == previous_level:
+\# ======================  
+\# LEVEL UP  
+\# ======================  
 
-        if level_range > 0:
+else:  
 
-            today_percent = (
-                gain_today /
-                level_range
-            ) * 100
+    \# ----------------------  
+    \# STARY LEVEL  
+    \# ----------------------  
 
-            today_percent = round(
-                max(
-                    0,
-                    today_percent
-                )
-            )
+    old\_level\_start = exp\_for\_level(  
+        previous\_level  
+    )  
 
-        else:
+    old\_level\_end = exp\_for\_level(  
+        previous\_level + 1  
+    )  
 
-            today_percent = 0
+    old\_level\_range = (  
+        old\_level\_end -  
+        old\_level\_start  
+    )  
 
 
-    # ======================
-    # LEVEL UP
-    # ======================
+    if old\_level\_range > 0:  
 
-    else:
+        \# Ile EXP brakowało  
+        \# do starego levela  
 
-        # ----------------------
-        # STARY LEVEL
-        # ----------------------
+        old\_remaining = (  
+            old\_level\_end -  
+            previous\_exp  
+        )  
 
-        old_level_start = exp_for_level(
-            previous_level
-        )
+        old\_percent = (  
+            old\_remaining /  
+            old\_level\_range  
+        ) \* 100  
 
-        old_level_end = exp_for_level(
-            previous_level + 1
-        )
+        old\_percent = round(  
+            max(  
+                0,  
+                min(  
+                    100,  
+                    old\_percent  
+                )  
+            )  
+        )  
 
-        old_level_range = (
-            old_level_end -
-            old_level_start
-        )
+    else:  
 
+        old\_percent = 0  
 
-        if old_level_range > 0:
 
-            # Ile EXP brakowało
-            # do starego levela
+    \# ----------------------  
+    \# NOWY LEVEL  
+    \# ----------------------  
 
-            old_remaining = (
-                old_level_end -
-                previous_exp
-            )
+    new\_level\_start = exp\_for\_level(  
+        level  
+    )  
 
-            old_percent = (
-                old_remaining /
-                old_level_range
-            ) * 100
+    new\_level\_end = exp\_for\_level(  
+        level + 1  
+    )  
 
-            old_percent = round(
-                max(
-                    0,
-                    min(
-                        100,
-                        old_percent
-                    )
-                )
-            )
+    new\_level\_range = (  
+        new\_level\_end -  
+        new\_level\_start  
+    )  
 
-        else:
 
-            old_percent = 0
+    if new\_level\_range > 0:  
 
+        new\_exp = (  
+            exp -  
+            new\_level\_start  
+        )  
 
-        # ----------------------
-        # NOWY LEVEL
-        # ----------------------
+        new\_percent = (  
+            new\_exp /  
+            new\_level\_range  
+        ) \* 100  
 
-        new_level_start = exp_for_level(
-            level
-        )
+        new\_percent = round(  
+            max(  
+                0,  
+                min(  
+                    100,  
+                    new\_percent  
+                )  
+            )  
+        )  
 
-        new_level_end = exp_for_level(
-            level + 1
-        )
+    else:  
 
-        new_level_range = (
-            new_level_end -
-            new_level_start
-        )
+        new\_percent = 0  
 
 
-        if new_level_range > 0:
+    \# Wynik np.  
+    \# 25% → LVL UP → 10%  
 
-            new_exp = (
-                exp -
-                new_level_start
-            )
+    today\_percent = (  
+        f"{old\_percent}% "  
+        f"→ LVL UP → "  
+        f"{new\_percent}%"  
+    )  
 
-            new_percent = (
-                new_exp /
-                new_level_range
-            ) * 100
 
-            new_percent = round(
-                max(
-                    0,
-                    min(
-                        100,
-                        new_percent
-                    )
-                )
-            )
+\# ======================  
+\# TEKST ZMIAN  
+\# ======================  
 
-        else:
+if level\_change > 0:  
 
-            new_percent = 0
+    level\_text = (  
+        f"\*\*{level} (+{level\_change})\*\*"  
+    )  
 
+elif level\_change < 0:  
 
-        # Wynik np.
-        # 25% → LVL UP → 10%
+    level\_text = (  
+        f"\*\*{level} ({level\_change})\*\*"  
+    )  
 
-        today_percent = (
-            f"{old_percent}% "
-            f"→ LVL UP → "
-            f"{new_percent}%"
-        )
+else:  
 
+    level\_text = (  
+        f"\*\*{level}\*\*"  
+    )  
 
-    # ======================
-    # TEKST ZMIAN
-    # ======================
 
-    if level_change > 0:
+if rank\_change > 0:  
 
-        level_text = (
-            f"**{level} (+{level_change})**"
-        )
+    rank\_text = (  
+        f"\*\*#{rank} (+{rank\_change})\*\*"  
+    )  
 
-    elif level_change < 0:
+elif rank\_change < 0:  
 
-        level_text = (
-            f"**{level} ({level_change})**"
-        )
+    rank\_text = (  
+        f"\*\*#{rank} ({rank\_change})\*\*"  
+    )  
 
-    else:
+else:  
 
-        level_text = (
-            f"**{level}**"
-        )
+    rank\_text = (  
+        f"\*\*#{rank}\*\*"  
+    )  
 
 
-    if rank_change > 0:
+\# ======================  
+\# DISCORD MESSAGE  
+\# ======================  
 
-        rank_text = (
-            f"**#{rank} (+{rank_change})**"
-        )
+message = f"""
 
-    elif rank_change < 0:
-
-        rank_text = (
-            f"**#{rank} ({rank_change})**"
-        )
-
-    else:
-
-        rank_text = (
-            f"**#{rank}**"
-        )
-
-
-    # ======================
-    # DISCORD MESSAGE
-    # ======================
-
-    message = f"""
 🌙 **Daily Exp Report: {CHAR_NAME} 🏹**
 
 ⭐ Level {level_text} | 🏆 Rank {rank_text}
@@ -1089,18 +1020,16 @@ def main():
 🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
 """
 
+\# ======================  
+\# WYSŁANIE  
+\# ======================  
 
-    # ======================
-    # WYSŁANIE
-    # ======================
-
-    send_discord(
-        message
-    )
+send\_discord(  
+    message  
+)  
 
 
-    print("BOT END")
-
+print("BOT END")
 
 # ======================
 # START
@@ -1108,4 +1037,4 @@ def main():
 
 if __name__ == "__main__":
 
-    main() 
+main()
