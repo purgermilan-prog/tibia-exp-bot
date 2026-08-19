@@ -39,9 +39,11 @@ def tibia_datetime():
     return now
 
 
+
 def tibia_date():
 
     return tibia_datetime().date().isoformat()
+
 
 
 def tibia_day_start():
@@ -70,6 +72,7 @@ def format_exp(value):
         return f"{value/1000:,.0f}k"
 
     return str(value)
+
 
 
 # ======================
