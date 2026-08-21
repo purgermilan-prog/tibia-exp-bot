@@ -506,14 +506,18 @@ def average_month(history):
 
 
 
-def biggest_daily(history):
+def biggest_daily(history, exclude_date=None):
 
     best = 0
-
     best_date = None
 
-
     for index in range(1, len(history)):
+
+        # Nie uwzględniamy dzisiejszego wyniku
+        # przy sprawdzaniu dotychczasowego PB
+        if exclude_date is not None:
+            if history[index]["date"] == exclude_date:
+                continue
 
         gain = (
             history[index]["exp"]
@@ -521,13 +525,10 @@ def biggest_daily(history):
             history[index - 1]["exp"]
         )
 
-
         if gain > best:
 
             best = gain
-
             best_date = history[index]["date"]
-
 
     return best, best_date
 
@@ -719,6 +720,14 @@ def main():
 
     today = tibia_date()
 
+    # ======================
+    # DOTYCHCZASOWY PB
+    # ======================
+
+    previous_best, previous_best_date = biggest_daily(
+        history,
+        exclude_date=today
+    )
 
     # ======================
     # AKTUALIZACJA HISTORII
@@ -765,6 +774,15 @@ def main():
         history
     )
 
+    # ======================
+    # PB EXP
+    # ======================
+
+    is_pb = (
+        gain_today > 0
+        and previous_best > 0
+        and gain_today > previous_best
+    )
 
     # ======================
     # ZMIANY LVL / RANK
@@ -1038,7 +1056,7 @@ def main():
 ⭐ Level {level_text} | 🏆 Rank {rank_text}
 ✨ Current Exp: **{exp:,}**
 
-📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**
+📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**{" 🏆 **PB!**" if is_pb else ""}
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
 📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent}% remaining)**
