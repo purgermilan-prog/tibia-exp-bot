@@ -1056,7 +1056,8 @@ def main():
 ⭐ Level {level_text} | 🏆 Rank {rank_text}
 ✨ Current Exp: **{exp:,}**
 
-📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**{" 🏆 **PB!**" if is_pb else ""}
+📈 Today: **+{format_exp(gain_today)} ({today_percent}%)**
+{"🎉 New 🏆 **PB!** 🎊" if is_pb else ""}
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
 📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent}% remaining)**
