@@ -102,48 +102,57 @@ def send_discord(message):
 
 def get_week_data(history):
     """
-    Weekly report is generated on Monday after the Tibia reset.
+    Current Tibia week-to-date report.
 
-    The current history entry represents the EXP gained during the
-    previous Tibia day. Therefore, on Monday we use the current Monday
-    entry plus the six preceding entries = 7 completed Tibia days.
+    Week starts on Monday and ends on the current Tibia date.
 
     Example:
-        Monday 24.08 report
-        period: 17.08 10:00 -> 24.08 10:00
-        daily gains: entries dated 18.08 ... 24.08
+        Saturday -> Monday through Saturday.
     """
 
-    if len(history) < 8:
+    if len(history) < 2:
         return None
 
     latest = history[-1]
     latest_date = date.fromisoformat(latest["date"])
 
-    # We expect the latest saved entry to be today's Tibia date.
-    expected_dates = [
-        latest_date - timedelta(days=days)
-        for days in range(7, -1, -1)
-    ]
+    # Monday of the current week
+    week_start_date = latest_date - timedelta(
+        days=latest_date.weekday()
+    )
+
+    # Snapshot immediately before Monday
+    start_snapshot_date = week_start_date - timedelta(days=1)
 
     by_date = {
         date.fromisoformat(item["date"]): item
         for item in history
     }
 
-    # Need the starting snapshot + 7 daily snapshots.
-    if any(day not in by_date for day in expected_dates):
-        print("Missing one or more history days for weekly report.")
+    if start_snapshot_date not in by_date:
         print(
-            "Expected:",
-            ", ".join(day.isoformat() for day in expected_dates)
+            f"Missing history snapshot for "
+            f"{start_snapshot_date.isoformat()}."
         )
         return None
 
-    start = by_date[expected_dates[0]]
+    # Monday -> today
+    current_dates = [
+        week_start_date + timedelta(days=i)
+        for i in range(
+            (latest_date - week_start_date).days + 1
+        )
+    ]
+
+    if any(day not in by_date for day in current_dates):
+        print("Missing one or more history days for current week.")
+        return None
+
+    start = by_date[start_snapshot_date]
+
     daily_entries = [
         by_date[day]
-        for day in expected_dates[1:]
+        for day in current_dates
     ]
 
     daily_gains = []
@@ -151,32 +160,61 @@ def get_week_data(history):
     previous = start
 
     for item in daily_entries:
-        gain = item["exp"] - previous["exp"]
+
+        gain = (
+            item["exp"]
+            -
+            previous["exp"]
+        )
 
         daily_gains.append({
             "date": item["date"],
             "gain": gain,
-            "level": item.get("level", previous.get("level")),
-            "rank": item.get("rank", previous.get("rank")),
+            "level": item.get(
+                "level",
+                previous.get("level")
+            ),
+            "rank": item.get(
+                "rank",
+                previous.get("rank")
+            ),
         })
 
         previous = item
 
-    total_gain = latest["exp"] - start["exp"]
+    total_gain = (
+        latest["exp"]
+        -
+        start["exp"]
+    )
 
-    # Levels gained during the period.
-    levels = latest.get("level", 0) - start.get("level", 0)
+    levels = (
+        latest.get("level", 0)
+        -
+        start.get("level", 0)
+    )
 
-    # Average over exactly 7 completed Tibia days.
-    avg_day = total_gain / 7
+    number_of_days = len(daily_gains)
 
-    best_day = max(daily_gains, key=lambda item: item["gain"])
-    worst_day = min(daily_gains, key=lambda item: item["gain"])
+    avg_day = (
+        total_gain /
+        number_of_days
+    )
+
+    best_day = max(
+        daily_gains,
+        key=lambda item: item["gain"]
+    )
+
+    worst_day = min(
+        daily_gains,
+        key=lambda item: item["gain"]
+    )
 
     return {
         "start": start,
         "latest": latest,
-        "start_date": expected_dates[0],
+        "start_date": week_start_date,
         "end_date": latest_date,
         "daily": daily_gains,
         "total_gain": total_gain,
@@ -193,12 +231,25 @@ def get_week_data(history):
 
 def get_previous_week(history, start_date):
     """
-    Previous week's total is calculated from the 8 snapshots immediately
-    preceding the current week's starting snapshot.
+    Returns the complete previous Tibia week:
+    Monday -> Sunday.
     """
 
-    previous_end_date = start_date
-    previous_start_date = start_date - timedelta(days=7)
+    previous_start_date = (
+        start_date -
+        timedelta(days=7)
+    )
+
+    previous_end_date = (
+        start_date -
+        timedelta(days=1)
+    )
+
+    # Snapshot immediately before previous Monday
+    previous_start_snapshot_date = (
+        previous_start_date -
+        timedelta(days=1)
+    )
 
     by_date = {
         date.fromisoformat(item["date"]): item
@@ -206,22 +257,40 @@ def get_previous_week(history, start_date):
     }
 
     if (
-        previous_start_date not in by_date
-        or previous_end_date not in by_date
+        previous_start_snapshot_date
+        not in by_date
+        or
+        previous_end_date
+        not in by_date
     ):
         return None
 
-    start = by_date[previous_start_date]
-    end = by_date[previous_end_date]
+    start = by_date[
+        previous_start_snapshot_date
+    ]
 
-    total_gain = end["exp"] - start["exp"]
-    avg_day = total_gain / 7
+    end = by_date[
+        previous_end_date
+    ]
+
+    total_gain = (
+        end["exp"]
+        -
+        start["exp"]
+    )
+
+    avg_day = (
+        total_gain /
+        7
+    )
 
     return {
         "total_gain": total_gain,
         "avg_day": avg_day,
         "start": start,
         "end": end,
+        "start_date": previous_start_date,
+        "end_date": previous_end_date,
     }
 
 
@@ -272,11 +341,11 @@ def build_message(week, previous_week, global_pb, global_pb_date):
     end_text = end_date.strftime("%d.%m.%Y")
 
     message = f"""
-📊 **Weekly Exp Report: {CHAR_NAME} 🏹**
+📊 **Weekly Report: {CHAR_NAME} 🏹**
 
 📅 **{start_text} → {end_text}**
 
-📈 EXP: **{format_exp(week["total_gain"])}**
+📈 Exp: **{format_exp(week["total_gain"])}**
 🆙 Levels: **+{week["levels"]}**
 ⚡ Avg/day: **{format_exp(int(week["avg_day"]))}**
 
