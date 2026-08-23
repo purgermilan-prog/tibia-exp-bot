@@ -1071,6 +1071,7 @@ def main():
 
 🤖 Bot: **{bot_days(history)} days** 📅 Since: **{history[0]["date"]}**
 🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
+🗣️📢 @soru1280
 """
 
 
