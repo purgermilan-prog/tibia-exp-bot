@@ -428,84 +428,6 @@ def gain_current_month(history):
     )
 
 
-
-def average_daily(history):
-
-    if len(history) < 2:
-
-        return 0
-
-
-    first = datetime.fromisoformat(
-        history[0]["date"]
-    )
-
-    last = datetime.fromisoformat(
-        history[-1]["date"]
-    )
-
-
-    days = (
-        last - first
-    ).days
-
-
-    if days <= 0:
-
-        return 0
-
-
-    return (
-        history[-1]["exp"]
-        -
-        history[0]["exp"]
-    ) / days
-
-
-
-def average_month(history):
-
-    month = tibia_date()[:7]
-
-
-    data = [
-        item for item in history
-        if item["date"].startswith(month)
-    ]
-
-
-    if len(data) < 2:
-
-        return 0
-
-
-    first = datetime.fromisoformat(
-        data[0]["date"]
-    )
-
-    last = datetime.fromisoformat(
-        data[-1]["date"]
-    )
-
-
-    days = (
-        last - first
-    ).days
-
-
-    if days <= 0:
-
-        return 0
-
-
-    return (
-        data[-1]["exp"]
-        -
-        data[0]["exp"]
-    ) / days
-
-
-
 def biggest_daily(history, exclude_date=None):
 
     best = 0
@@ -531,37 +453,6 @@ def biggest_daily(history, exclude_date=None):
             best_date = history[index]["date"]
 
     return best, best_date
-
-
-
-def exp_since_start(history):
-
-    if len(history) < 2:
-
-        return 0
-
-
-    return (
-        history[-1]["exp"]
-        -
-        history[0]["exp"]
-    )
-
-
-
-def levels_since_start(history):
-
-    if len(history) < 2:
-
-        return 0
-
-
-    return (
-        history[-1]["level"]
-        -
-        history[0]["level"]
-    )
-
 
 
 def bot_days(history):
@@ -759,14 +650,6 @@ def main():
     )
 
     gain_month = gain_current_month(
-        history
-    )
-
-    avg = average_daily(
-        history
-    )
-
-    avg_month = average_month(
         history
     )
 
@@ -1062,16 +945,11 @@ def main():
 📆 Month: **+{format_exp(gain_month)}**
 📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent}% remaining)**
 
-⚡ Avg day: **{format_exp(int(avg))}**
-⚡ Avg month: **{format_exp(int(avg_month))}**
-
-🚀 Total gain: **+{format_exp(exp_since_start(history))} EXP**
-🆙 Levels: **+{levels_since_start(history)}**
 🔥 Best: **+{format_exp(best)} ({best_date})**
 
 🤖 Bot: **{bot_days(history)} days** 📅 Since: **{history[0]["date"]}**
 🕙 Tibia reset: **{tibia_day_start().strftime("%d.%m %H:%M")}**
-🗣️📢 @soru1280
+🗣️📢 @soru
 """
 
 
