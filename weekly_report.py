@@ -41,22 +41,38 @@ def format_percent(value):
 # ======================
 
 def load_history():
+
     if not os.path.exists(SAVE_FILE):
         return []
 
     try:
-        with open(SAVE_FILE, "r", encoding="utf-8") as file:
+
+        with open(
+            SAVE_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
             data = json.load(file)
 
-        history = data.get("history", [])
+        history = data.get(
+            "history",
+            []
+        )
 
         # Sortujemy na wszelki wypadek.
-        history.sort(key=lambda item: item["date"])
+        history.sort(
+            key=lambda item: item["date"]
+        )
 
         return history
 
     except Exception as e:
-        print(f"History error: {e}")
+
+        print(
+            f"History error: {e}"
+        )
+
         return []
 
 
@@ -65,20 +81,31 @@ def load_history():
 # ======================
 
 def send_discord(message):
+
     if not DISCORD_WEBHOOK_URL:
+
         print(message)
+
         return
 
     for attempt in range(3):
+
         try:
+
             response = requests.post(
                 DISCORD_WEBHOOK_URL,
-                json={"content": message},
+                json={
+                    "content": message
+                },
                 timeout=15
             )
 
             if response.status_code in [200, 204]:
-                print("Discord message sent.")
+
+                print(
+                    "Discord message sent."
+                )
+
                 return
 
             print(
@@ -87,13 +114,21 @@ def send_discord(message):
             )
 
         except Exception as e:
-            print("Discord error:", e)
+
+            print(
+                "Discord error:",
+                e
+            )
 
         if attempt < 2:
+
             import time
+
             time.sleep(3)
 
-    print("Failed to send Discord message.")
+    print(
+        "Failed to send Discord message."
+    )
 
 
 # ======================
@@ -111,18 +146,28 @@ def get_week_data(history):
     """
 
     if len(history) < 2:
+
         return None
 
     latest = history[-1]
-    latest_date = date.fromisoformat(latest["date"])
+
+    latest_date = date.fromisoformat(
+        latest["date"]
+    )
 
     # Monday of the current week
-    week_start_date = latest_date - timedelta(
-        days=latest_date.weekday()
+    week_start_date = (
+        latest_date -
+        timedelta(
+            days=latest_date.weekday()
+        )
     )
 
     # Snapshot immediately before Monday
-    start_snapshot_date = week_start_date - timedelta(days=1)
+    start_snapshot_date = (
+        week_start_date -
+        timedelta(days=1)
+    )
 
     by_date = {
         date.fromisoformat(item["date"]): item
@@ -130,25 +175,38 @@ def get_week_data(history):
     }
 
     if start_snapshot_date not in by_date:
+
         print(
             f"Missing history snapshot for "
             f"{start_snapshot_date.isoformat()}."
         )
+
         return None
 
     # Monday -> today
     current_dates = [
-        week_start_date + timedelta(days=i)
+        week_start_date +
+        timedelta(days=i)
         for i in range(
             (latest_date - week_start_date).days + 1
         )
     ]
 
-    if any(day not in by_date for day in current_dates):
-        print("Missing one or more history days for current week.")
+    if any(
+        day not in by_date
+        for day in current_dates
+    ):
+
+        print(
+            "Missing one or more history days "
+            "for current week."
+        )
+
         return None
 
-    start = by_date[start_snapshot_date]
+    start = by_date[
+        start_snapshot_date
+    ]
 
     daily_entries = [
         by_date[day]
@@ -167,18 +225,20 @@ def get_week_data(history):
             previous["exp"]
         )
 
-        daily_gains.append({
-            "date": item["date"],
-            "gain": gain,
-            "level": item.get(
-                "level",
-                previous.get("level")
-            ),
-            "rank": item.get(
-                "rank",
-                previous.get("rank")
-            ),
-        })
+        daily_gains.append(
+            {
+                "date": item["date"],
+                "gain": gain,
+                "level": item.get(
+                    "level",
+                    previous.get("level")
+                ),
+                "rank": item.get(
+                    "rank",
+                    previous.get("rank")
+                ),
+            }
+        )
 
         previous = item
 
@@ -194,7 +254,9 @@ def get_week_data(history):
         start.get("level", 0)
     )
 
-    number_of_days = len(daily_gains)
+    number_of_days = len(
+        daily_gains
+    )
 
     avg_day = (
         total_gain /
@@ -263,6 +325,7 @@ def get_previous_week(history, start_date):
         previous_end_date
         not in by_date
     ):
+
         return None
 
     start = by_date[
@@ -300,8 +363,21 @@ def get_previous_week(history, start_date):
 
 def find_global_pb(history, current_week):
     """
-    Finds the biggest completed daily EXP gain before the current week's
-    final snapshot. The current week's gains can then be marked as PB.
+    Finds the previous all-time PB and all new PBs
+    created during the current week.
+
+    Every day that beats the PB known before that day
+    is marked as a PB.
+
+    Example:
+
+        Previous PB: 27,722k
+
+        Monday:  30,130k -> PB
+        Tuesday: 12,000k
+        Wednesday: 30,991k -> PB
+
+    Both Monday and Wednesday are returned in pb_dates.
     """
 
     current_dates = {
@@ -309,36 +385,118 @@ def find_global_pb(history, current_week):
         for item in current_week["daily"]
     }
 
-    best = 0
-    best_date = None
+    # ======================
+    # POPRZEDNI ALL-TIME PB
+    # ======================
+
+    previous_pb = 0
 
     for index in range(1, len(history)):
+
         current = history[index]
         previous = history[index - 1]
 
-        # Current week is checked separately.
+        # Bieżący tydzień sprawdzamy osobno.
         if current["date"] in current_dates:
             continue
 
-        gain = current["exp"] - previous["exp"]
+        gain = (
+            current["exp"]
+            -
+            previous["exp"]
+        )
 
-        if gain > best:
-            best = gain
-            best_date = current["date"]
+        if gain > previous_pb:
 
-    return best, best_date
+            previous_pb = gain
 
+    # ======================
+    # NOWE PB W BIEŻĄCYM TYGODNIU
+    # ======================
 
+    pb_dates = []
+
+    current_pb = previous_pb
+
+    # Przechodzimy chronologicznie.
+    for item in current_week["daily"]:
+
+        gain = item["gain"]
+
+        if gain > current_pb:
+
+            pb_dates.append(
+                item["date"]
+            )
+
+            current_pb = gain
+
+    # ======================
+    # FINALNY PB
+    # ======================
+
+    global_pb = current_pb
+
+    global_pb_date = None
+
+    if pb_dates:
+
+        # Ostatni rekord z listy PB
+        # jest aktualnym all-time PB.
+        global_pb_date = pb_dates[-1]
+
+    else:
+
+        # Nie było nowego PB w tym tygodniu.
+        # Szukamy daty istniejącego rekordu.
+
+        for index in range(1, len(history)):
+
+            current = history[index]
+            previous = history[index - 1]
+
+            if current["date"] in current_dates:
+                continue
+
+            gain = (
+                current["exp"]
+                -
+                previous["exp"]
+            )
+
+            if gain == global_pb:
+
+                global_pb_date = (
+                    current["date"]
+                )
+
+    return (
+        pb_dates,
+        global_pb,
+        global_pb_date
+    )
 # ======================
 # WIADOMOŚĆ
 # ======================
 
-def build_message(week, previous_week, global_pb, global_pb_date):
+def build_message(
+    week,
+    previous_week,
+    pb_dates,
+    global_pb,
+    global_pb_date
+):
+
     start_date = week["start_date"]
     end_date = week["end_date"]
 
-    start_text = start_date.strftime("%d.%m")
-    end_text = end_date.strftime("%d.%m.%Y")
+    start_text = start_date.strftime(
+        "%d.%m"
+    )
+
+    end_text = end_date.strftime(
+        "%d.%m.%Y"
+    )
 
     message = f"""
 📊 **Weekly Report: {CHAR_NAME} 🏹**
@@ -353,32 +511,57 @@ def build_message(week, previous_week, global_pb, global_pb_date):
 📉 Worst: **{format_exp(week["worst_day"]["gain"])}** ({week["worst_day"]["date"]})
 """
 
-    # Daily breakdown
+    # ======================
+    # DAILY BREAKDOWN
+    # ======================
+
     message += "\n📋 **Daily:**\n"
 
     for item in week["daily"]:
+
         marker = ""
 
-        if item["gain"] > global_pb and global_pb > 0:
+        if item["date"] in pb_dates:
+
             marker = " 🏆 **PB**"
 
         message += (
-            f"{item['date'][8:10]}.{item['date'][5:7]}  "
-            f"**{format_exp(item['gain'])}**{marker}\n"
+            f"{item['date'][8:10]}."
+            f"{item['date'][5:7]}  "
+            f"**{format_exp(item['gain'])}**"
+            f"{marker}\n"
         )
 
-    # Comparison with previous week
+    # ======================
+    # PORÓWNANIE Z POPRZEDNIM TYGODNIEM
+    # ======================
+
     if previous_week:
+
         total_change = (
-            (week["total_gain"] - previous_week["total_gain"])
-            / previous_week["total_gain"] * 100
+            (
+                week["total_gain"]
+                -
+                previous_week["total_gain"]
+            )
+            /
+            previous_week["total_gain"]
+            *
+            100
             if previous_week["total_gain"] != 0
             else 0
         )
 
         avg_change = (
-            (week["avg_day"] - previous_week["avg_day"])
-            / previous_week["avg_day"] * 100
+            (
+                week["avg_day"]
+                -
+                previous_week["avg_day"]
+            )
+            /
+            previous_week["avg_day"]
+            *
+            100
             if previous_week["avg_day"] != 0
             else 0
         )
@@ -389,37 +572,66 @@ EXP: **{format_percent(total_change)}**
 Avg/day: **{format_percent(avg_change)}**
 """
 
-    # Rank change
-    start_rank = week["start"].get("rank")
-    end_rank = week["latest"].get("rank")
+    # ======================
+    # RANK CHANGE
+    # ======================
 
-    if start_rank is not None and end_rank is not None:
-        rank_change = start_rank - end_rank
-
-        if rank_change > 0:
-            rank_text = f"#{start_rank} → #{end_rank} (+{rank_change})"
-        elif rank_change < 0:
-            rank_text = f"#{start_rank} → #{end_rank} ({rank_change})"
-        else:
-            rank_text = f"#{start_rank} → #{end_rank}"
-
-        message += f"\n🏆 Rank: **{rank_text}**\n"
-
-    # Global PB
-    current_week_pb = max(
-        (item["gain"] for item in week["daily"]),
-        default=0
+    start_rank = week["start"].get(
+        "rank"
     )
 
-    if current_week_pb > global_pb and global_pb > 0:
-        pb_date = max(
-            week["daily"],
-            key=lambda item: item["gain"]
-        )["date"]
+    end_rank = week["latest"].get(
+        "rank"
+    )
+
+    if (
+        start_rank is not None
+        and
+        end_rank is not None
+    ):
+
+        rank_change = (
+            start_rank -
+            end_rank
+        )
+
+        if rank_change > 0:
+
+            rank_text = (
+                f"#{start_rank} → "
+                f"#{end_rank} "
+                f"(+{rank_change})"
+            )
+
+        elif rank_change < 0:
+
+            rank_text = (
+                f"#{start_rank} → "
+                f"#{end_rank} "
+                f"({rank_change})"
+            )
+
+        else:
+
+            rank_text = (
+                f"#{start_rank} → "
+                f"#{end_rank}"
+            )
 
         message += (
-            f"\n🏆 **NEW PB: {format_exp(current_week_pb)} "
-            f"({pb_date})**\n"
+            f"\n🏆 Rank: **{rank_text}**\n"
+        )
+
+    # ======================
+    # GLOBAL PB
+    # ======================
+
+    if pb_dates:
+
+        message += (
+            f"\n🏆 **NEW PB: "
+            f"{format_exp(global_pb)} "
+            f"({global_pb_date})**\n"
         )
 
     return message.strip()
@@ -430,22 +642,41 @@ Avg/day: **{format_percent(avg_change)}**
 # ======================
 
 def main():
+
     print("=" * 60)
-    print("Tibia Weekly EXP Report")
+
+    print(
+        "Tibia Weekly EXP Report"
+    )
+
     print("=" * 60)
 
     history = load_history()
 
-    print(f"History entries: {len(history)}")
+    print(
+        f"History entries: "
+        f"{len(history)}"
+    )
 
     if not history:
-        print("ERROR: No history found.")
+
+        print(
+            "ERROR: No history found."
+        )
+
         return
 
-    week = get_week_data(history)
+    week = get_week_data(
+        history
+    )
 
     if not week:
-        print("ERROR: Not enough consecutive history for weekly report.")
+
+        print(
+            "ERROR: Not enough consecutive "
+            "history for weekly report."
+        )
+
         return
 
     previous_week = get_previous_week(
@@ -453,42 +684,80 @@ def main():
         week["start_date"]
     )
 
-    global_pb, global_pb_date = find_global_pb(
-        history,
-        week
+    pb_dates, global_pb, global_pb_date = (
+        find_global_pb(
+            history,
+            week
+        )
     )
 
     print(
-        f"Week: {week['start_date']} -> {week['end_date']}"
+        f"Week: "
+        f"{week['start_date']} "
+        f"-> "
+        f"{week['end_date']}"
     )
+
     print(
-        f"EXP: {week['total_gain']:,}"
+        f"EXP: "
+        f"{week['total_gain']:,}"
     )
+
     print(
-        f"Avg/day: {week['avg_day']:,.0f}"
+        f"Avg/day: "
+        f"{week['avg_day']:,.0f}"
     )
+
     print(
-        f"Best: {week['best_day']['gain']:,} "
+        f"Best: "
+        f"{week['best_day']['gain']:,} "
         f"({week['best_day']['date']})"
     )
+
     print(
-        f"Worst: {week['worst_day']['gain']:,} "
+        f"Worst: "
+        f"{week['worst_day']['gain']:,} "
         f"({week['worst_day']['date']})"
+    )
+
+    print(
+        f"PB dates: "
+        f"{pb_dates}"
+    )
+
+    print(
+        f"Global PB: "
+        f"{global_pb:,} "
+        f"({global_pb_date})"
     )
 
     message = build_message(
         week,
         previous_week,
+        pb_dates,
         global_pb,
         global_pb_date
     )
 
-    print("\n" + message + "\n")
+    print(
+        "\n" +
+        message +
+        "\n"
+    )
 
-    send_discord(message)
+    send_discord(
+        message
+    )
 
-    print("WEEKLY REPORT END")
+    print(
+        "WEEKLY REPORT END"
+    )
 
+
+# ======================
+# START
+# ======================
 
 if __name__ == "__main__":
+
     main()
