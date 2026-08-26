@@ -725,7 +725,7 @@ def main():
     # AKTUALIZACJA HISTORII
     # ======================
 
-        history = update_today(
+    history = update_today(
         history,
         {
             "date": today,
