@@ -725,23 +725,23 @@ def main():
     # AKTUALIZACJA HISTORII
     # ======================
 
-    history = update_today(
-    history,
-    {
-        "date": today,
-        "exp": exp,
-        "level": level,
-        "rank": rank,
-        "achievement_points": achievements
-    }
-)
+        history = update_today(
+        history,
+        {
+            "date": today,
+            "exp": exp,
+            "level": level,
+            "rank": rank,
+            "achievement_points": achievements
+        }
+    )
 
-history = update_deaths(
-    history,
-    deaths
-)
+    history = update_deaths(
+        history,
+        deaths
+    )
 
-save_history(history)
+    save_history(history)
 
 
     # ======================
