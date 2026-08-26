@@ -36,11 +36,29 @@ def tibia_datetime():
     return now
 
 
-
 def tibia_date():
 
     return tibia_datetime().date().isoformat()
 
+
+def tibia_date_from_timestamp(timestamp):
+
+    dt = datetime.fromisoformat(
+        timestamp.replace("Z", "+00:00")
+    )
+
+    # TibiaData zwraca czas w UTC.
+    # Usuwamy timezone, aby zachować tę samą
+    # logikę 10:00 -> 10:00 co w tibia_datetime().
+    dt = dt.replace(tzinfo=None)
+
+    # Wszystko przed 10:00 należy do poprzedniego
+    # dnia Tibii.
+    if dt.hour < 10:
+
+        dt -= timedelta(days=1)
+
+    return dt.date().isoformat()
 
 
 def tibia_day_start():
@@ -476,6 +494,84 @@ def bot_days(history):
         today - start
     ).days + 1
 # ======================
+# AKTUALIZACJA ŚMIERCI
+# ======================
+
+def update_deaths(history, deaths):
+    """
+    Dodaje nowe śmierci do odpowiednich dni Tibii.
+
+    Śmierci są pobierane z TibiaData, który pokazuje
+    historię śmierci z ostatniego miesiąca.
+
+    Funkcja:
+    - przypisuje śmierć do właściwego dnia Tibii,
+    - nie tworzy wpisów bez danych EXP,
+    - nie duplikuje istniejących śmierci.
+    """
+
+    for death in deaths:
+
+        time = death.get("time")
+        level = death.get("level")
+        reason = death.get("reason", "")
+
+        if not time:
+            continue
+
+        # Ustalamy dzień Tibii, do którego należy śmierć.
+        death_date = tibia_date_from_timestamp(time)
+
+        # Szukamy odpowiedniego wpisu w historii EXP.
+        day_entry = None
+
+        for entry in history:
+
+            if entry.get("date") == death_date:
+
+                day_entry = entry
+                break
+
+        # Jeżeli danego dnia nie ma w historii,
+        # nie tworzymy sztucznego wpisu bez EXP.
+        if day_entry is None:
+            continue
+
+        # Starsze wpisy historii mogą jeszcze nie posiadać
+        # pola deaths.
+        if "deaths" not in day_entry:
+
+            day_entry["deaths"] = []
+
+        # Sprawdzamy, czy ta śmierć została już zapisana.
+        already_exists = any(
+            existing.get("time") == time
+            for existing in day_entry["deaths"]
+        )
+
+        if already_exists:
+            continue
+
+        # Zapisujemy wszystkich killerów.
+        killers = []
+
+        for killer in death.get("killers", []):
+
+            name = killer.get("name")
+
+            if name:
+                killers.append(name)
+
+        # Zapisujemy śmierć.
+        day_entry["deaths"].append({
+            "time": time,
+            "level": level,
+            "killers": killers,
+            "reason": reason
+        })
+
+    return history
+# ======================
 # DISCORD
 # ======================
 
@@ -574,6 +670,11 @@ def main():
             "?"
         )
 
+    # ======================
+    # ŚMIERCI
+    # ======================
+
+    deaths = character.get("deaths", [])
 
     # ======================
     # POPRZEDNI STAN
@@ -625,17 +726,22 @@ def main():
     # ======================
 
     history = update_today(
-        history,
-        {
-            "date": today,
-            "exp": exp,
-            "level": level,
-            "rank": rank,
-            "achievement_points": achievements
-        }
-    )
+    history,
+    {
+        "date": today,
+        "exp": exp,
+        "level": level,
+        "rank": rank,
+        "achievement_points": achievements
+    }
+)
 
-    save_history(history)
+history = update_deaths(
+    history,
+    deaths
+)
+
+save_history(history)
 
 
     # ======================
