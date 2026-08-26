@@ -676,6 +676,8 @@ def main():
 
     deaths = character.get("deaths", [])
 
+    print("DEATHS FROM API:", deaths)
+
     # ======================
     # POPRZEDNI STAN
     # ======================
