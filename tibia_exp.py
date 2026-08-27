@@ -697,9 +697,9 @@ def main():
     # ŚMIERCI
     # ======================
 
-   deaths = fetch_character_deaths()
+    deaths = fetch_character_deaths()
 
-   print("DEATHS FROM API:", deaths)
+    print("DEATHS FROM API:", deaths)
 
     # ======================
     # POPRZEDNI STAN
