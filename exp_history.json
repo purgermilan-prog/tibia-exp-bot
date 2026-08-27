@@ -194,7 +194,17 @@
       "exp": 4366896919,
       "level": 641,
       "rank": 580,
-      "achievement_points": 802
+      "achievement_points": 802,
+      "deaths": [
+        {
+          "time": "2026-08-23T22:44:15Z",
+          "level": 642,
+          "killers": [
+            "grimeleech"
+          ],
+          "reason": "Died at Level 642 by grimeleech."
+        }
+      ]
     },
     {
       "date": "2026-08-24",
@@ -212,9 +222,9 @@
     },
     {
       "date": "2026-08-26",
-      "exp": 4383483770,
-      "level": 642,
-      "rank": 577,
+      "exp": 4393705793,
+      "level": 643,
+      "rank": 579,
       "achievement_points": 802
     }
   ]
