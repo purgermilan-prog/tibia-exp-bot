@@ -186,7 +186,30 @@ def fetch_character_data():
 
         return None
 
+def fetch_character_deaths():
 
+    url = (
+        "https://api.tibiadata.com/v4/character/"
+        +
+        CHAR_NAME.replace(" ", "%20")
+    )
+
+    data = api_get(url)
+
+    if not data:
+
+        return []
+
+    try:
+
+        return data["character"].get(
+            "deaths",
+            []
+        )
+
+    except Exception:
+
+        return []
 
 # ======================
 # HIGHSCORE (ZOPTYMALIZOWANE)
@@ -674,9 +697,9 @@ def main():
     # ŚMIERCI
     # ======================
 
-    deaths = character.get("deaths", [])
+   deaths = fetch_character_deaths()
 
-    print("DEATHS FROM API:", deaths)
+   print("DEATHS FROM API:", deaths)
 
     # ======================
     # POPRZEDNI STAN
