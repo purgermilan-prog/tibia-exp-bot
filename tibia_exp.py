@@ -1013,7 +1013,7 @@ def main():
 
         today_percent = (
             f"{old_percent}% "
-            f"→ LVL UP → "
+            f"→ 🔼 lvl 🆙 → "
             f"{new_percent}%"
         )
 
