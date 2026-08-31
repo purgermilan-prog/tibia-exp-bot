@@ -9,7 +9,7 @@ import requests
 # KONFIGURACJA
 # ======================
 
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEEKLY")
 
 SAVE_FILE = "exp_history.json"
 
