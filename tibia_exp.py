@@ -841,7 +841,181 @@ def main():
     )
 
 
-   DISCORD_WEEKLY
+    # ======================
+    # % POZOSTAŁEGO LEVELA
+    # ======================
+
+    if level_range > 0:
+
+        remaining_exp = (
+            next_level_start -
+            exp
+        )
+
+        next_level_percent = (
+            remaining_exp /
+            level_range
+        ) * 100
+
+        next_level_percent = round(
+            max(
+                0,
+                min(
+                    100,
+                    next_level_percent
+                )
+            )
+        )
+
+    else:
+
+        next_level_percent = 0
+
+
+    # ======================
+    # % EXP WBITEGO DZISIAJ
+    # ======================
+
+    # Jeżeli nie mamy poprzedniego
+    # zapisu, nie próbujemy zgadywać.
+
+    if not history or len(history) < 2:
+
+        today_percent = 0
+
+
+    # ======================
+    # NORMALNY DZIEŃ
+    # ======================
+
+    elif level == previous_level:
+
+        if level_range > 0:
+
+            today_percent = (
+                gain_today /
+                level_range
+            ) * 100
+
+            today_percent = round(
+                max(
+                    0,
+                    today_percent
+                )
+            )
+
+        else:
+
+            today_percent = 0
+
+
+    # ======================
+    # LEVEL UP
+    # ======================
+
+    else:
+
+        # ----------------------
+        # STARY LEVEL
+        # ----------------------
+
+        old_level_start = exp_for_level(
+            previous_level
+        )
+
+        old_level_end = exp_for_level(
+            previous_level + 1
+        )
+
+        old_level_range = (
+            old_level_end -
+            old_level_start
+        )
+
+
+        if old_level_range > 0:
+
+            # Ile EXP brakowało
+            # do starego levela
+
+            old_remaining = (
+                old_level_end -
+                previous_exp
+            )
+
+            old_percent = (
+                old_remaining /
+                old_level_range
+            ) * 100
+
+            old_percent = round(
+                max(
+                    0,
+                    min(
+                        100,
+                        old_percent
+                    )
+                )
+            )
+
+        else:
+
+            old_percent = 0
+
+
+        # ----------------------
+        # NOWY LEVEL
+        # ----------------------
+
+        new_level_start = exp_for_level(
+            level
+        )
+
+        new_level_end = exp_for_level(
+            level + 1
+        )
+
+        new_level_range = (
+            new_level_end -
+            new_level_start
+        )
+
+
+        if new_level_range > 0:
+
+            new_exp = (
+                exp -
+                new_level_start
+            )
+
+            new_percent = (
+                new_exp /
+                new_level_range
+            ) * 100
+
+            new_percent = round(
+                max(
+                    0,
+                    min(
+                        100,
+                        new_percent
+                    )
+                )
+            )
+
+        else:
+
+            new_percent = 0
+
+
+        # Wynik np.
+        # 25% → LVL UP → 10%
+
+        today_percent = (
+            f"{old_percent}% "
+            f"→ 🔼 lvl 🆙 → "
+            f"{new_percent}%"
+        )
 
     # ======================
     # FORMAT PROCENTU
