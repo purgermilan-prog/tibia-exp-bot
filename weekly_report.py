@@ -9,7 +9,7 @@ import requests
 # KONFIGURACJA
 # ======================
 
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEEKLY")
+DISCORD_WEEKLY = os.getenv("DISCORD_WEEKLY")
 
 SAVE_FILE = "exp_history.json"
 
@@ -82,7 +82,7 @@ def load_history():
 
 def send_discord(message):
 
-    if not DISCORD_WEBHOOK_URL:
+    if not DISCORD_WEEKLY:
 
         print(message)
 
@@ -93,7 +93,7 @@ def send_discord(message):
         try:
 
             response = requests.post(
-                DISCORD_WEBHOOK_URL,
+                DISCORD_WEEKLY,
                 json={
                     "content": message
                 },
