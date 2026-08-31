@@ -872,150 +872,184 @@ def main():
         next_level_percent = 0
 
 
-    # ======================
-    # % EXP WBITEGO DZISIAJ
-    # ======================
+   # ======================
+# % EXP WBITEGO DZISIAJ
+# ======================
 
-    # Jeżeli nie mamy poprzedniego
-    # zapisu, nie próbujemy zgadywać.
+# Jeżeli nie mamy poprzedniego zapisu
+# nie próbujemy zgadywać.
 
-    if not history or len(history) < 2:
+if not history or len(history) < 2:
 
-        today_percent = 0
+    today_percent = "?"
 
 
-    # ======================
-    # NORMALNY DZIEŃ
-    # ======================
+# ======================
+# LEVEL DOWN
+# ======================
 
-    elif level == previous_level:
+elif level < previous_level:
 
-        if level_range > 0:
+    today_percent = (
+        f"💀 LVL DOWN "
+        f"({previous_level} → {level})"
+    )
 
-            today_percent = (
-                gain_today /
-                level_range
-            ) * 100
 
-            today_percent = round(
-                max(
-                    0,
-                    today_percent
-                )
+# ======================
+# NORMALNY DZIEŃ
+# ======================
+
+elif level == previous_level:
+
+    if level_range > 0:
+
+        today_percent = (
+            gain_today /
+            level_range
+        ) * 100
+
+        today_percent = round(
+            max(
+                0,
+                today_percent
             )
+        )
 
-        else:
-
-            today_percent = 0
-
-
-    # ======================
-    # LEVEL UP
-    # ======================
+        today_percent = (
+            f"{today_percent}%"
+        )
 
     else:
 
-        # ----------------------
-        # STARY LEVEL
-        # ----------------------
+        today_percent = "0%"
 
-        old_level_start = exp_for_level(
-            previous_level
+
+# ======================
+# LEVEL UP
+# ======================
+
+else:
+
+    parts = []
+
+    current_level = previous_level
+
+    current_exp = previous_exp
+
+    # Przechodzimy po każdym levelu,
+    # który został wbity.
+
+    while current_level < level:
+
+        level_start = exp_for_level(
+            current_level
         )
 
-        old_level_end = exp_for_level(
-            previous_level + 1
+        level_end = exp_for_level(
+            current_level + 1
         )
 
-        old_level_range = (
-            old_level_end -
-            old_level_start
+        level_range_current = (
+            level_end -
+            level_start
         )
 
+        if level_range_current > 0:
 
-        if old_level_range > 0:
-
-            # Ile EXP brakowało
-            # do starego levela
-
-            old_remaining = (
-                old_level_end -
-                previous_exp
+            remaining = (
+                level_end -
+                current_exp
             )
 
-            old_percent = (
-                old_remaining /
-                old_level_range
+            percent_to_level = (
+                remaining /
+                level_range_current
             ) * 100
 
-            old_percent = round(
+            percent_to_level = round(
                 max(
                     0,
                     min(
                         100,
-                        old_percent
+                        percent_to_level
                     )
                 )
             )
 
         else:
 
-            old_percent = 0
+            percent_to_level = 0
 
 
-        # ----------------------
-        # NOWY LEVEL
-        # ----------------------
+        # Dodajemy procent przed levelem
 
-        new_level_start = exp_for_level(
-            level
+        parts.append(
+            f"{percent_to_level}%"
         )
 
-        new_level_end = exp_for_level(
-            level + 1
+        parts.append(
+            "LVL UP"
         )
 
-        new_level_range = (
-            new_level_end -
+        # Przechodzimy na kolejny level
+
+        current_level += 1
+
+        current_exp = exp_for_level(
+            current_level
+        )
+
+
+    # Procent EXP wbitego na aktualnym levelu
+
+    new_level_start = exp_for_level(
+        level
+    )
+
+    new_level_end = exp_for_level(
+        level + 1
+    )
+
+    new_level_range = (
+        new_level_end -
+        new_level_start
+    )
+
+    if new_level_range > 0:
+
+        new_exp = (
+            exp -
             new_level_start
         )
 
+        new_percent = (
+            new_exp /
+            new_level_range
+        ) * 100
 
-        if new_level_range > 0:
-
-            new_exp = (
-                exp -
-                new_level_start
-            )
-
-            new_percent = (
-                new_exp /
-                new_level_range
-            ) * 100
-
-            new_percent = round(
-                max(
-                    0,
-                    min(
-                        100,
-                        new_percent
-                    )
+        new_percent = round(
+            max(
+                0,
+                min(
+                    100,
+                    new_percent
                 )
             )
-
-        else:
-
-            new_percent = 0
-
-
-        # Wynik np.
-        # 25% → LVL UP → 10%
-
-        today_percent = (
-            f"{old_percent}% "
-            f"→ 🔼 lvl 🆙 → "
-            f"{new_percent}%"
         )
+
+    else:
+
+        new_percent = 0
+
+
+    parts.append(
+        f"{new_percent}%"
+    )
+
+    today_percent = (
+        " → ".join(parts)
+    )
 
     # ======================
     # FORMAT PROCENTU
