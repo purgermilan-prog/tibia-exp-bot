@@ -24,7 +24,7 @@ jobs:
               env:
                   DISCORD_WEBHOOK_MONTHLY: ${{ secrets.DISCORD_WEBHOOK_MONTHLY }}
               run: |
-                  python monthly_bot.py
+                  python monthly.py
 
             - name: Save history
               run: |
