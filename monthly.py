@@ -830,79 +830,7 @@ def send_discord(message):
         print(
             "Monthly report sent."
         )
-# ======================
-# MAIN
-# ======================
 
-def main():
-
-    print("MONTHLY BOT START")
-
-    history = load_history()
-
-    if not history:
-
-        print(
-            "ERROR: No history data loaded."
-        )
-
-        return
-
-    report_month = get_report_month()
-
-    if not report_month:
-
-        return
-
-    year, month = report_month
-
-    print(
-        f"Report month: {year}-{month:02d}"
-    )
-
-    entries = get_month_entries(
-        history,
-        year,
-        month
-    )
-
-    print(
-        "Month entries:",
-        len(entries)
-    )
-
-    # Miesiąc musi być kompletny.
-    if not is_complete_month(
-        history,
-        year,
-        month
-    ):
-
-        print(
-            "Month is not complete. "
-            "Report cancelled."
-        )
-
-        return
-
-    stats = calculate_stats(
-        history,
-        entries
-    )
-
-    deaths = get_deaths(
-        entries
-    )
-
-    # ======================
-    # PB
-    # ======================
-
-    previous_pb = previous_best_before_month(
-        history,
-        year,
-        month
-    )
 
     new_pb = False
 
@@ -1189,3 +1117,76 @@ def main():
 if __name__ == "__main__":
 
     main()
+# ======================
+# MAIN
+# ======================
+
+def main():
+
+    print("MONTHLY BOT START")
+
+    history = load_history()
+
+    if not history:
+
+        print(
+            "ERROR: No history data loaded."
+        )
+
+        return
+
+    report_month = get_report_month()
+
+    if not report_month:
+
+        return
+
+    year, month = report_month
+
+    print(
+        f"Report month: {year}-{month:02d}"
+    )
+
+    entries = get_month_entries(
+        history,
+        year,
+        month
+    )
+
+    print(
+        "Month entries:",
+        len(entries)
+    )
+
+    # Miesiąc musi być kompletny.
+    if not is_complete_month(
+        history,
+        year,
+        month
+    ):
+
+        print(
+            "Month is not complete. "
+            "Report cancelled."
+        )
+
+        return
+
+    stats = calculate_stats(
+        history,
+        entries
+    )
+
+    deaths = get_deaths(
+        entries
+    )
+
+    # ======================
+    # PB
+    # ======================
+
+    previous_pb = previous_best_before_month(
+        history,
+        year,
+        month
+    )
