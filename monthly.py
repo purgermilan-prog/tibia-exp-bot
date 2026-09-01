@@ -46,17 +46,46 @@ def load_history():
 
             history = json.load(file)
 
+        print(
+            "History type:",
+            type(history).__name__
+        )
+
         # ======================
         # LISTA
         # ======================
 
         if isinstance(history, list):
 
-            return [
+            print(
+                "History entries:",
+                len(history)
+            )
+
+            if history:
+
+                print(
+                    "First entry type:",
+                    type(history[0]).__name__
+                )
+
+                print(
+                    "First entry:",
+                    history[0]
+                )
+
+            normalized = [
                 entry
                 for entry in history
                 if isinstance(entry, dict)
             ]
+
+            print(
+                "Valid history entries:",
+                len(normalized)
+            )
+
+            return normalized
 
         # ======================
         # SŁOWNIK
@@ -64,9 +93,21 @@ def load_history():
 
         if isinstance(history, dict):
 
+            print(
+                "History keys:",
+                len(history)
+            )
+
             normalized = []
 
             for entry_date, data in history.items():
+
+                print(
+                    "Processing:",
+                    entry_date,
+                    "type:",
+                    type(data).__name__
+                )
 
                 if not isinstance(data, dict):
 
@@ -74,14 +115,17 @@ def load_history():
 
                 entry = dict(data)
 
-                # Jeżeli data nie znajduje się
-                # we wpisie, pobieramy ją z klucza.
                 entry.setdefault(
                     "date",
                     entry_date
                 )
 
                 normalized.append(entry)
+
+            print(
+                "Normalized entries:",
+                len(normalized)
+            )
 
             return normalized
 
@@ -692,7 +736,7 @@ def previous_best_before_month(
 # DISCORD
 # ======================
 
-def send_discord(embed):
+def send_discord(message):
 
     if not DISCORD_WEBHOOK_URL:
 
@@ -705,9 +749,7 @@ def send_discord(embed):
     response = requests.post(
         DISCORD_WEBHOOK_URL,
         json={
-            "embeds": [
-                embed
-            ]
+            "content": message
         },
         timeout=30
     )
@@ -740,6 +782,10 @@ def main():
 
     if not history:
 
+        print(
+            "ERROR: No history data loaded."
+        )
+
         return
 
     report_month = get_report_month()
@@ -758,6 +804,11 @@ def main():
         history,
         year,
         month
+    )
+
+    print(
+        "Month entries:",
+        len(entries)
     )
 
     # Miesiąc musi być kompletny.
@@ -851,15 +902,14 @@ def main():
             "🕊️ No deaths."
         )
 
-    # Discord field ma limit 1024 znaków.
     death_text = "\n".join(
         death_lines
     )
 
-    if len(death_text) > 1000:
+    if len(death_text) > 1800:
 
         death_text = (
-            death_text[:950]
+            death_text[:1750]
             + "\n..."
         )
 
@@ -921,68 +971,93 @@ def main():
         )
 
     # ======================
-    # EMBED
+    # WIADOMOŚĆ
     # ======================
 
-    title = (
-        f"🗓️ Monthly Report — "
-        f"{month_name(year, month)} {year}"
-    )
+    message_lines = [
+        (
+            f"🗓️ **Monthly Report — "
+            f"{month_name(year, month)} {year}**"
+        ),
+        "",
+        (
+            f"**Level:** "
+            f"{stats['start_level']} → "
+            f"{stats['end_level']}"
+        ),
+        (
+            f"**EXP:** "
+            f"{format_exp(stats['net_exp'])}"
+        ),
+        (
+            f"**Active days:** "
+            f"{stats['positive_days']} / "
+            f"{stats['total_days']}"
+        ),
+        "",
+        "📈 **EXP**",
+        (
+            f"**Net:** "
+            f"{format_exp(stats['net_exp'])}"
+        ),
+        (
+            f"**Average:** "
+            f"{format_exp(stats['average'])}"
+        )
+    ]
 
-    description = (
-        f"**Level:** "
-        f"{stats['start_level']} → "
-        f"{stats['end_level']}\n"
-        f"**EXP:** "
-        f"{format_exp(stats['net_exp'])}\n"
-        f"**Active days:** "
-        f"{stats['positive_days']} / "
-        f"{stats['total_days']}"
-    )
+    if stats["best_day"]:
 
-    fields = [
-        {
-            "name": "📈 EXP",
-            "value": (
-                f"**Net:** "
-                f"{format_exp(stats['net_exp'])}\n"
-                f"**Average:** "
-                f"{format_exp(stats['average'])}\n"
-                f"**Best day:** "
-                f"{format_exp(stats['best_day'][1])} "
-                f"({stats['best_day'][0]})"
-                if stats["best_day"]
-                else "No data."
-            ),
-            "inline": False
-        },
-        {
-            "name": "🏆 Progress",
-            "value": (
+        message_lines.append(
+            f"**Best day:** "
+            f"{format_exp(stats['best_day'][1])} "
+            f"({stats['best_day'][0]})"
+        )
+
+    else:
+
+        message_lines.append(
+            "**Best day:** No data."
+        )
+
+    message_lines.extend(
+        [
+            "",
+            "🏆 **Progress**",
+            (
                 f"**Levels:** "
-                f"+{stats['levels_gained']}\n"
+                f"+{stats['levels_gained']}"
+            ),
+            (
                 f"**Rank:** "
                 f"{stats['start_rank']} → "
-                f"{stats['end_rank']}\n"
+                f"{stats['end_rank']}"
+            ),
+            (
                 f"**Achievements:** "
                 f"{stats['start_achievements']} → "
                 f"{stats['end_achievements']}"
             ),
-            "inline": True
-        },
-        {
-            "name": "🔥 Records",
-            "value": "\n".join(
-                top_lines
-            ),
-            "inline": True
-        },
-        {
-            "name": f"💀 Deaths ({len(deaths)})",
-            "value": death_text,
-            "inline": False
-        }
-    ]
+            "",
+            "🔥 **Records**"
+        ]
+    )
+
+    message_lines.extend(
+        top_lines
+    )
+
+    message_lines.extend(
+        [
+            "",
+            f"💀 **Deaths ({len(deaths)})**",
+            death_text
+        ]
+    )
+
+    # ======================
+    # PB
+    # ======================
 
     if stats["best_day"]:
 
@@ -993,43 +1068,60 @@ def main():
 
         if new_pb:
 
-            pb_text += " 🎉 **NEW PB!**"
+            pb_text += (
+                " 🎉 **NEW PB!**"
+            )
 
-        fields.append(
-            {
-                "name": "🎯 PB",
-                "value": pb_text,
-                "inline": False
-            }
+        message_lines.extend(
+            [
+                "",
+                "🎯 **PB**",
+                pb_text
+            ]
         )
+
+    # ======================
+    # PORÓWNANIE
+    # ======================
 
     if comparison_text:
 
-        fields.append(
-            {
-                "name": (
-                    f"📊 vs "
+        message_lines.extend(
+            [
+                "",
+                (
+                    f"📊 **vs "
                     f"{month_name(previous_year, previous_month)} "
-                    f"{previous_year}"
+                    f"{previous_year}**"
                 ),
-                "value": comparison_text,
-                "inline": False
-            }
+                comparison_text
+            ]
         )
 
-    embed = {
-        "title": title,
-        "description": description,
-        "color": 0x3498DB,
-        "fields": fields,
-        "footer": {
-            "text": "Arrow Accountant • Monthly Report"
-        }
-    }
+    message_lines.extend(
+        [
+            "",
+            "━━━━━━━━━━━━━━━━━━━━",
+            "Arrow Accountant • Monthly Report"
+        ]
+    )
 
-    send_discord(embed)
+    message = "\n".join(
+        message_lines
+    )
 
-    print("MONTHLY BOT END")
+    print(
+        "Message length:",
+        len(message)
+    )
+
+    send_discord(
+        message
+    )
+
+    print(
+        "MONTHLY BOT END"
+    )
 
 
 if __name__ == "__main__":
