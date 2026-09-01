@@ -52,6 +52,59 @@ def load_history():
         )
 
         # ======================
+        # GŁÓWNA STRUKTURA:
+        # {"history": [...]}
+        # ======================
+
+        if isinstance(history, dict):
+
+            if "history" in history:
+
+                history = history["history"]
+
+                print(
+                    "Found 'history' list."
+                )
+
+            else:
+
+                print(
+                    "History keys:",
+                    len(history)
+                )
+
+                normalized = []
+
+                for entry_date, data in history.items():
+
+                    print(
+                        "Processing:",
+                        entry_date,
+                        "type:",
+                        type(data).__name__
+                    )
+
+                    if not isinstance(data, dict):
+
+                        continue
+
+                    entry = dict(data)
+
+                    entry.setdefault(
+                        "date",
+                        entry_date
+                    )
+
+                    normalized.append(entry)
+
+                print(
+                    "Normalized entries:",
+                    len(normalized)
+                )
+
+                return normalized
+
+        # ======================
         # LISTA
         # ======================
 
@@ -61,18 +114,6 @@ def load_history():
                 "History entries:",
                 len(history)
             )
-
-            if history:
-
-                print(
-                    "First entry type:",
-                    type(history[0]).__name__
-                )
-
-                print(
-                    "First entry:",
-                    history[0]
-                )
 
             normalized = [
                 entry
@@ -85,47 +126,12 @@ def load_history():
                 len(normalized)
             )
 
-            return normalized
-
-        # ======================
-        # SŁOWNIK
-        # ======================
-
-        if isinstance(history, dict):
-
-            print(
-                "History keys:",
-                len(history)
-            )
-
-            normalized = []
-
-            for entry_date, data in history.items():
+            if normalized:
 
                 print(
-                    "Processing:",
-                    entry_date,
-                    "type:",
-                    type(data).__name__
+                    "First entry:",
+                    normalized[0]
                 )
-
-                if not isinstance(data, dict):
-
-                    continue
-
-                entry = dict(data)
-
-                entry.setdefault(
-                    "date",
-                    entry_date
-                )
-
-                normalized.append(entry)
-
-            print(
-                "Normalized entries:",
-                len(normalized)
-            )
 
             return normalized
 
@@ -222,8 +228,6 @@ def expected_dates(year, month):
         ).isoformat()
         for day in range(1, days + 1)
     }
-
-
 # ======================
 # DANE MIESIĄCA
 # ======================
@@ -239,12 +243,18 @@ def get_month_entries(
     entries = [
         entry
         for entry in history
-        if entry.get("date", "").startswith(prefix)
+        if entry.get(
+            "date",
+            ""
+        ).startswith(prefix)
     ]
 
     return sorted(
         entries,
-        key=lambda x: x.get("date", "")
+        key=lambda x: x.get(
+            "date",
+            ""
+        )
     )
 
 
@@ -270,7 +280,11 @@ def is_complete_month(
         month
     )
 
-    return expected.issubset(dates)
+    return expected.issubset(
+        dates
+    )
+
+
 # ======================
 # FORMATOWANIE EXP
 # ======================
@@ -289,15 +303,24 @@ def format_exp(value):
 
     if value >= 1_000_000_000:
 
-        return f"{sign}{value / 1_000_000_000:.3f}B"
+        return (
+            f"{sign}"
+            f"{value / 1_000_000_000:.3f}B"
+        )
 
     if value >= 1_000_000:
 
-        return f"{sign}{value / 1_000_000:.3f}M"
+        return (
+            f"{sign}"
+            f"{value / 1_000_000:.3f}M"
+        )
 
     if value >= 1_000:
 
-        return f"{sign}{value / 1_000:.1f}k"
+        return (
+            f"{sign}"
+            f"{value / 1_000:.1f}k"
+        )
 
     return f"{sign}{value:,}"
 
@@ -310,7 +333,10 @@ def calculate_daily_gains(history):
 
     entries = sorted(
         history,
-        key=lambda x: x.get("date", "")
+        key=lambda x: x.get(
+            "date",
+            ""
+        )
     )
 
     gains = {}
@@ -319,21 +345,28 @@ def calculate_daily_gains(history):
 
     for entry in entries:
 
-        current_date = entry.get("date")
-        current_exp = entry.get("exp")
+        current_date = entry.get(
+            "date"
+        )
+
+        current_exp = entry.get(
+            "exp"
+        )
 
         if (
             previous is not None
             and current_exp is not None
         ):
 
-            previous_exp = previous.get("exp")
+            previous_exp = previous.get(
+                "exp"
+            )
 
             if previous_exp is not None:
 
                 gains[current_date] = (
-                    current_exp -
-                    previous_exp
+                    current_exp
+                    - previous_exp
                 )
 
         previous = entry
@@ -358,7 +391,9 @@ def calculate_stats(
 
     for entry in entries:
 
-        day = entry.get("date")
+        day = entry.get(
+            "date"
+        )
 
         if day in daily_gains:
 
@@ -382,8 +417,8 @@ def calculate_stats(
         )
 
         net_exp = (
-            last_exp -
-            first_exp
+            last_exp
+            - first_exp
         )
 
     else:
@@ -439,8 +474,8 @@ def calculate_stats(
     )
 
     levels_gained = (
-        end_level -
-        start_level
+        end_level
+        - start_level
     )
 
     start_rank = entries[0].get(
@@ -464,13 +499,19 @@ def calculate_stats(
     )
 
     if (
-        isinstance(start_achievements, int)
-        and isinstance(end_achievements, int)
+        isinstance(
+            start_achievements,
+            int
+        )
+        and isinstance(
+            end_achievements,
+            int
+        )
     ):
 
         achievement_gain = (
-            end_achievements -
-            start_achievements
+            end_achievements
+            - start_achievements
         )
 
     else:
@@ -481,8 +522,12 @@ def calculate_stats(
         "daily_gains": daily_gains,
         "month_gains": month_gains,
         "net_exp": net_exp,
-        "positive_days": len(positive_days),
-        "total_days": len(entries),
+        "positive_days": len(
+            positive_days
+        ),
+        "total_days": len(
+            entries
+        ),
         "average": average,
         "best_day": best_day,
         "worst_day": worst_day,
@@ -491,9 +536,12 @@ def calculate_stats(
         "levels_gained": levels_gained,
         "start_rank": start_rank,
         "end_rank": end_rank,
-        "start_achievements": start_achievements,
-        "end_achievements": end_achievements,
-        "achievement_gain": achievement_gain
+        "start_achievements":
+            start_achievements,
+        "end_achievements":
+            end_achievements,
+        "achievement_gain":
+            achievement_gain
     }
 
 
@@ -512,10 +560,19 @@ def get_deaths(entries):
             []
         ):
 
-            death_copy = dict(death)
+            if not isinstance(
+                death,
+                dict
+            ):
 
-            death_copy["date"] = entry.get(
-                "date"
+                continue
+
+            death_copy = dict(
+                death
+            )
+
+            death_copy["date"] = (
+                entry.get("date")
             )
 
             deaths.append(
@@ -552,7 +609,10 @@ def death_line(death):
 
     for killer in killers:
 
-        if isinstance(killer, dict):
+        if isinstance(
+            killer,
+            dict
+        ):
 
             name = killer.get(
                 "name",
@@ -601,8 +661,6 @@ def death_line(death):
         f"Level {level} — "
         f"{killer_text}"
     )
-
-
 # ======================
 # PORÓWNANIE
 # ======================
@@ -668,7 +726,8 @@ def comparison_line(
             arrow = "＝"
 
         percent_text = (
-            f"{arrow} {abs(change):.1f}%"
+            f"{arrow} "
+            f"{abs(change):.1f}%"
         )
 
     return (
@@ -741,7 +800,8 @@ def send_discord(message):
     if not DISCORD_WEBHOOK_URL:
 
         print(
-            "ERROR: DISCORD_WEBHOOK_MONTHLY not set."
+            "ERROR: "
+            "DISCORD_WEBHOOK_MONTHLY not set."
         )
 
         return
@@ -906,10 +966,12 @@ def main():
         death_lines
     )
 
-    if len(death_text) > 1800:
+    # Discord limit for a normal message
+    # is 2000 characters.
+    if len(death_text) > 1000:
 
         death_text = (
-            death_text[:1750]
+            death_text[:950]
             + "\n..."
         )
 
