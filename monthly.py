@@ -1117,6 +1117,29 @@ def send_discord(message):
 if __name__ == "__main__":
 
     main()
+."
+        )
+
+        return
+
+    stats = calculate_stats(
+        history,
+        entries
+    )
+
+    deaths = get_deaths(
+        entries
+    )
+
+    # ======================
+    # PB
+    # ======================
+
+    previous_pb = previous_best_before_month(
+        history,
+        year,
+        month
+    )
 # ======================
 # MAIN
 # ======================
@@ -1167,26 +1190,4 @@ def main():
 
         print(
             "Month is not complete. "
-            "Report cancelled."
-        )
-
-        return
-
-    stats = calculate_stats(
-        history,
-        entries
-    )
-
-    deaths = get_deaths(
-        entries
-    )
-
-    # ======================
-    # PB
-    # ======================
-
-    previous_pb = previous_best_before_month(
-        history,
-        year,
-        month
-    )
+            "Report cancelled
