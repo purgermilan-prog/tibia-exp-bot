@@ -44,7 +44,52 @@ def load_history():
             encoding="utf-8"
         ) as file:
 
-            return json.load(file)
+            history = json.load(file)
+
+        # ======================
+        # LISTA
+        # ======================
+
+        if isinstance(history, list):
+
+            return [
+                entry
+                for entry in history
+                if isinstance(entry, dict)
+            ]
+
+        # ======================
+        # SŁOWNIK
+        # ======================
+
+        if isinstance(history, dict):
+
+            normalized = []
+
+            for entry_date, data in history.items():
+
+                if not isinstance(data, dict):
+
+                    continue
+
+                entry = dict(data)
+
+                # Jeżeli data nie znajduje się
+                # we wpisie, pobieramy ją z klucza.
+                entry.setdefault(
+                    "date",
+                    entry_date
+                )
+
+                normalized.append(entry)
+
+            return normalized
+
+        print(
+            "ERROR: Unsupported history format."
+        )
+
+        return []
 
     except Exception as e:
 
@@ -182,8 +227,6 @@ def is_complete_month(
     )
 
     return expected.issubset(dates)
-
-
 # ======================
 # FORMATOWANIE EXP
 # ======================
@@ -461,15 +504,36 @@ def death_line(death):
         []
     )
 
-    if killers:
+    killer_names = []
 
-        killer_names = ", ".join(
-            killers
+    for killer in killers:
+
+        if isinstance(killer, dict):
+
+            name = killer.get(
+                "name",
+                "unknown"
+            )
+
+            killer_names.append(
+                name
+            )
+
+        else:
+
+            killer_names.append(
+                str(killer)
+            )
+
+    if killer_names:
+
+        killer_text = ", ".join(
+            killer_names
         )
 
     else:
 
-        killer_names = "unknown"
+        killer_text = "unknown"
 
     try:
 
@@ -491,7 +555,7 @@ def death_line(death):
     return (
         f"☠️ {time_text} — "
         f"Level {level} — "
-        f"{killer_names}"
+        f"{killer_text}"
     )
 
 
@@ -664,8 +728,6 @@ def send_discord(embed):
         print(
             "Monthly report sent."
         )
-
-
 # ======================
 # MAIN
 # ======================
