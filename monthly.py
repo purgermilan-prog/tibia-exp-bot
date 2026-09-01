@@ -1,7 +1,7 @@
 import json
 import os
 import calendar
-from datetime import date, timedelta, datetime
+from datetime import date, datetime
 
 import requests
 
@@ -32,7 +32,9 @@ def load_history():
 
     if not os.path.exists(HISTORY_FILE):
 
-        print("ERROR: History file not found.")
+        print(
+            "ERROR: History file not found."
+        )
 
         return []
 
@@ -52,7 +54,7 @@ def load_history():
         )
 
         # ======================
-        # GŁÓWNA STRUKTURA:
+        # FORMAT:
         # {"history": [...]}
         # ======================
 
@@ -84,7 +86,10 @@ def load_history():
                         type(data).__name__
                     )
 
-                    if not isinstance(data, dict):
+                    if not isinstance(
+                        data,
+                        dict
+                    ):
 
                         continue
 
@@ -95,7 +100,9 @@ def load_history():
                         entry_date
                     )
 
-                    normalized.append(entry)
+                    normalized.append(
+                        entry
+                    )
 
                 print(
                     "Normalized entries:",
@@ -105,7 +112,8 @@ def load_history():
                 return normalized
 
         # ======================
-        # LISTA
+        # FORMAT:
+        # [...]
         # ======================
 
         if isinstance(history, list):
@@ -118,7 +126,10 @@ def load_history():
             normalized = [
                 entry
                 for entry in history
-                if isinstance(entry, dict)
+                if isinstance(
+                    entry,
+                    dict
+                )
             ]
 
             print(
@@ -165,12 +176,17 @@ def get_report_month():
                 REPORT_MONTH.split("-")
             )
 
+            if month < 1 or month > 12:
+
+                raise ValueError
+
             return year, month
 
         except Exception:
 
             print(
-                "ERROR: REPORT_MONTH must be YYYY-MM"
+                "ERROR: REPORT_MONTH "
+                "must be YYYY-MM"
             )
 
             return None
@@ -184,7 +200,10 @@ def get_report_month():
     return today.year, today.month - 1
 
 
-def previous_month(year, month):
+def previous_month(
+    year,
+    month
+):
 
     if month == 1:
 
@@ -193,7 +212,10 @@ def previous_month(year, month):
     return year, month - 1
 
 
-def month_name(year, month):
+def month_name(
+    year,
+    month
+):
 
     names = [
         "January",
@@ -213,7 +235,10 @@ def month_name(year, month):
     return names[month - 1]
 
 
-def expected_dates(year, month):
+def expected_dates(
+    year,
+    month
+):
 
     days = calendar.monthrange(
         year,
@@ -226,7 +251,10 @@ def expected_dates(year, month):
             month,
             day
         ).isoformat()
-        for day in range(1, days + 1)
+        for day in range(
+            1,
+            days + 1
+        )
     }
 # ======================
 # DANE MIESIĄCA
@@ -294,9 +322,11 @@ def format_exp(value):
     sign = ""
 
     if value > 0:
+
         sign = "+"
 
     elif value < 0:
+
         sign = "-"
 
     value = abs(value)
@@ -329,7 +359,9 @@ def format_exp(value):
 # ZMIANA DZIENNA
 # ======================
 
-def calculate_daily_gains(history):
+def calculate_daily_gains(
+    history
+):
 
     entries = sorted(
         history,
@@ -549,7 +581,9 @@ def calculate_stats(
 # ŚMIERCI
 # ======================
 
-def get_deaths(entries):
+def get_deaths(
+    entries
+):
 
     deaths = []
 
@@ -588,7 +622,9 @@ def get_deaths(entries):
     )
 
 
-def death_line(death):
+def death_line(
+    death
+):
 
     time = death.get(
         "time",
@@ -795,7 +831,9 @@ def previous_best_before_month(
 # DISCORD
 # ======================
 
-def send_discord(message):
+def send_discord(
+    message
+):
 
     if not DISCORD_WEBHOOK_URL:
 
@@ -804,15 +842,26 @@ def send_discord(message):
             "DISCORD_WEBHOOK_MONTHLY not set."
         )
 
-        return
+        return False
 
-    response = requests.post(
-        DISCORD_WEBHOOK_URL,
-        json={
-            "content": message
-        },
-        timeout=30
-    )
+    try:
+
+        response = requests.post(
+            DISCORD_WEBHOOK_URL,
+            json={
+                "content": message
+            },
+            timeout=30
+        )
+
+    except requests.RequestException as e:
+
+        print(
+            "Discord request error:",
+            e
+        )
+
+        return False
 
     if response.status_code not in (
         200,
@@ -825,12 +874,86 @@ def send_discord(message):
             response.text
         )
 
-    else:
+        return False
+
+    print(
+        "Monthly report sent."
+    )
+
+    return True
+# ======================
+# MAIN
+# ======================
+
+def main():
+
+    print("MONTHLY BOT START")
+
+    history = load_history()
+
+    if not history:
 
         print(
-            "Monthly report sent."
+            "ERROR: No history data loaded."
         )
 
+        return
+
+    report_month = get_report_month()
+
+    if not report_month:
+
+        return
+
+    year, month = report_month
+
+    print(
+        f"Report month: {year}-{month:02d}"
+    )
+
+    entries = get_month_entries(
+        history,
+        year,
+        month
+    )
+
+    print(
+        "Month entries:",
+        len(entries)
+    )
+
+    # Miesiąc musi być kompletny.
+    if not is_complete_month(
+        history,
+        year,
+        month
+    ):
+
+        print(
+            "Month is not complete. "
+            "Report cancelled."
+        )
+
+        return
+
+    stats = calculate_stats(
+        history,
+        entries
+    )
+
+    deaths = get_deaths(
+        entries
+    )
+
+    # ======================
+    # PB
+    # ======================
+
+    previous_pb = previous_best_before_month(
+        history,
+        year,
+        month
+    )
 
     new_pb = False
 
@@ -894,8 +1017,6 @@ def send_discord(message):
         death_lines
     )
 
-    # Discord limit for a normal message
-    # is 2000 characters.
     if len(death_text) > 1000:
 
         death_text = (
@@ -909,7 +1030,7 @@ def send_discord(message):
 
     comparison_text = None
 
-    previous_year, previous_month = previous_month(
+    previous_year, previous_month_number = previous_month(
         year,
         month
     )
@@ -917,13 +1038,13 @@ def send_discord(message):
     if is_complete_month(
         history,
         previous_year,
-        previous_month
+        previous_month_number
     ):
 
         previous_entries = get_month_entries(
             history,
             previous_year,
-            previous_month
+            previous_month_number
         )
 
         previous_stats = calculate_stats(
@@ -1081,7 +1202,7 @@ def send_discord(message):
                 "",
                 (
                     f"📊 **vs "
-                    f"{month_name(previous_year, previous_month)} "
+                    f"{month_name(previous_year, previous_month_number)} "
                     f"{previous_year}**"
                 ),
                 comparison_text
@@ -1114,80 +1235,10 @@ def send_discord(message):
     )
 
 
+# ======================
+# START
+# ======================
+
 if __name__ == "__main__":
 
     main()
-."
-        )
-
-        return
-
-    stats = calculate_stats(
-        history,
-        entries
-    )
-
-    deaths = get_deaths(
-        entries
-    )
-
-    # ======================
-    # PB
-    # ======================
-
-    previous_pb = previous_best_before_month(
-        history,
-        year,
-        month
-    )
-# ======================
-# MAIN
-# ======================
-
-def main():
-
-    print("MONTHLY BOT START")
-
-    history = load_history()
-
-    if not history:
-
-        print(
-            "ERROR: No history data loaded."
-        )
-
-        return
-
-    report_month = get_report_month()
-
-    if not report_month:
-
-        return
-
-    year, month = report_month
-
-    print(
-        f"Report month: {year}-{month:02d}"
-    )
-
-    entries = get_month_entries(
-        history,
-        year,
-        month
-    )
-
-    print(
-        "Month entries:",
-        len(entries)
-    )
-
-    # Miesiąc musi być kompletny.
-    if not is_complete_month(
-        history,
-        year,
-        month
-    ):
-
-        print(
-            "Month is not complete. "
-            "Report cancelled
