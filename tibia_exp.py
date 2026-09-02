@@ -448,25 +448,64 @@ def gain_from_days(history, days):
 
 def gain_current_month(history):
 
-    month = tibia_date()[:7]
+    current_month = tibia_date()[:7]
 
-
-    data = [
+    # Wszystkie wpisy z aktualnego miesiąca
+    month_data = [
         item for item in history
-        if item["date"].startswith(month)
+        if item["date"].startswith(current_month)
     ]
 
-
-    if len(data) < 2:
-
+    if not month_data:
         return 0
 
+    # Szukamy ostatniego wpisu sprzed aktualnego miesiąca.
+    previous_month_entry = None
 
-    return (
-        data[-1]["exp"]
-        -
-        data[0]["exp"]
-    )
+    for item in history:
+
+        if item["date"] < f"{current_month}-01":
+
+            previous_month_entry = item
+
+    # Jeżeli mamy wpis sprzed miesiąca,
+    # liczymy EXP od jego wartości do aktualnej.
+    if previous_month_entry is not None:
+
+        return (
+            month_data[-1]["exp"]
+            -
+            previous_month_entry["exp"]
+        )
+
+    # Jeżeli historia zaczyna się dopiero w tym miesiącu,
+    # sumujemy dostępne dzienne przyrosty.
+    total = 0
+
+    for i in range(1, len(month_data)):
+
+        total += (
+            month_data[i]["exp"]
+            -
+            month_data[i - 1]["exp"]
+        )
+
+    # Jeżeli mamy tylko jeden wpis w miesiącu,
+    # pokazujemy przyrost względem poprzedniego wpisu
+    # w całej historii.
+    if len(month_data) == 1:
+
+        index = history.index(month_data[0])
+
+        if index > 0:
+
+            return (
+                month_data[0]["exp"]
+                -
+                history[index - 1]["exp"]
+            )
+
+    return total
 
 
 def biggest_daily(history, exclude_date=None):
