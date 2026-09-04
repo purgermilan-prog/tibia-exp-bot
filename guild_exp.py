@@ -4,6 +4,7 @@ import json
 import time
 from datetime import datetime, timedelta
 
+
 DISCORD_WEBHOOK_URL = os.getenv("GLOS")
 
 GUILD_NAME = "General Levy of Sarmats"
@@ -240,6 +241,19 @@ def save_history(data):
 
 
 # ======================
+# SPECIAL DISPLAY NAMES
+# ======================
+
+def display_name(name):
+
+    if name.lower() == "nasty kasper":
+
+        return "[to unlock this character transfer 250tc to Mian Stone'arrow]"
+
+    return name
+
+
+# ======================
 # TOP 3 FORMAT
 # ======================
 
@@ -270,7 +284,7 @@ def format_top3(title, players):
 
         text += (
             f"{medals[i]} "
-            f"{player[0]} "
+            f"{display_name(player[0])} "
             f"(+{player[1]:,})\n"
         )
 
@@ -284,6 +298,7 @@ def format_top3(title, players):
 # ======================
 # MAIN
 # ======================
+
 def main():
 
     print("GUILD BOT START")
@@ -332,7 +347,11 @@ def main():
         exp = all_players.get(name.lower())
 
         if exp is None:
-            print(f"{name} not found on highscores")
+
+            print(
+                f"{name} not found on highscores"
+            )
+
             continue
 
         total_exp_today += exp
@@ -375,7 +394,8 @@ def main():
         if len(member_history) >= 2:
 
             member_gain_today[name] = (
-                exp -
+                exp
+                -
                 member_history[-2]["exp"]
             )
 
@@ -395,7 +415,8 @@ def main():
 
         old_week = next(
             (
-                x for x in member_history
+                x
+                for x in member_history
                 if x["date"] >= week_limit
             ),
             None
@@ -417,14 +438,16 @@ def main():
         )
 
         month_data = [
-            x for x in member_history
+            x
+            for x in member_history
             if x["date"].startswith(month_prefix)
         ]
 
         if len(month_data) >= 2:
 
             member_gain_month[name] = (
-                exp -
+                exp
+                -
                 month_data[0]["exp"]
             )
 
@@ -457,13 +480,18 @@ def main():
     if len(guild_daily) >= 2:
 
         gain_today_total = (
-            total_exp_today -
+            total_exp_today
+            -
             guild_daily[-2]["exp_total"]
         )
 
     else:
 
         gain_today_total = 0
+
+    # ======================
+    # TYDZIEŃ GILDII
+    # ======================
 
     week_limit = (
         tibia_datetime()
@@ -473,18 +501,24 @@ def main():
 
     old_week = next(
         (
-            x for x in guild_daily
+            x
+            for x in guild_daily
             if x["date"] >= week_limit
         ),
         None
     )
 
     gain_week_total = (
-        total_exp_today -
+        total_exp_today
+        -
         old_week["exp_total"]
         if old_week
         else 0
     )
+
+    # ======================
+    # MIESIĄC GILDII
+    # ======================
 
     month_prefix = (
         tibia_datetime()
@@ -492,54 +526,71 @@ def main():
     )
 
     month_data = [
-        x for x in guild_daily
+        x
+        for x in guild_daily
         if x["date"].startswith(month_prefix)
     ]
 
     if len(month_data) >= 2:
 
         gain_month_total = (
-            total_exp_today -
+            total_exp_today
+            -
             month_data[0]["exp_total"]
         )
 
     else:
 
         gain_month_total = 0
-
     # ======================
     # TOP 3 PLAYERS
     # ======================
 
-    top_today = get_top3(member_gain_today)
-    top_week = get_top3(member_gain_week)
-    top_month = get_top3(member_gain_month)
+    top_today = get_top3(
+        member_gain_today
+    )
+
+    top_week = get_top3(
+        member_gain_week
+    )
+
+    top_month = get_top3(
+        member_gain_month
+    )
+
 
     # ======================
     # ACTIVE MEMBERS
     # ======================
 
     active_yesterday = sum(
-        1 for gain in member_gain_today.values()
+        1
+        for gain in member_gain_today.values()
         if gain > 0
     )
 
     active_last_7_days = sum(
-        1 for gain in member_gain_week.values()
+        1
+        for gain in member_gain_week.values()
         if gain > 0
     )
+
+
     # ======================
     # GUILD RECORDS TOP 3
     # ======================
 
     guild_records = []
 
-    for i in range(1, len(guild_daily)):
+    for i in range(
+        1,
+        len(guild_daily)
+    ):
 
         gain = (
             guild_daily[i]["exp_total"]
             -
-            guild_daily[i-1]["exp_total"]
+            guild_daily[i - 1]["exp_total"]
         )
 
         guild_records.append(
@@ -564,12 +615,15 @@ def main():
 
     for name, hist in history["members"].items():
 
-        for i in range(1, len(hist)):
+        for i in range(
+            1,
+            len(hist)
+        ):
 
             gain = (
                 hist[i]["exp"]
                 -
-                hist[i-1]["exp"]
+                hist[i - 1]["exp"]
             )
 
             individual_records.append(
@@ -580,13 +634,16 @@ def main():
                 )
             )
 
-
     individual_records_top3 = sorted(
         individual_records,
         key=lambda x: x[2],
         reverse=True
     )[:3]
 
+
+    # ======================
+    # SAVE HISTORY
+    # ======================
 
     save_history(history)
 
@@ -602,12 +659,16 @@ def main():
     ]
 
 
-    guild_record_text = "\n🔥 Guild daily records:\n"
+    guild_record_text = (
+        "\n🔥 Guild daily records:\n"
+    )
 
 
     if guild_records_top3:
 
-        for i, record in enumerate(guild_records_top3):
+        for i, record in enumerate(
+            guild_records_top3
+        ):
 
             guild_record_text += (
                 f"{medals[i]} "
@@ -617,28 +678,34 @@ def main():
 
     else:
 
-        guild_record_text += "Brak danych\n"
+        guild_record_text += (
+            "Brak danych\n"
+        )
 
 
-
-    individual_record_text = "\n🔥 Individual records:\n"
+    individual_record_text = (
+        "\n🔥 Individual records:\n"
+    )
 
 
     if individual_records_top3:
 
-        for i, record in enumerate(individual_records_top3):
+        for i, record in enumerate(
+            individual_records_top3
+        ):
 
             individual_record_text += (
                 f"{medals[i]} "
-                f"{record[0]} "
+                f"{display_name(record[0])} "
                 f"+{record[2]:,} "
                 f"({record[1]})\n"
             )
 
     else:
 
-        individual_record_text += "Brak danych\n"
-
+        individual_record_text += (
+            "Brak danych\n"
+        )
 
 
     # ======================
@@ -649,26 +716,43 @@ def main():
 🌙 **Daily Exp Report — {GUILD_NAME} ({WORLD})**
 
 👥 Members: **{len(members)}**
+
 🟢 Active yesterday:
 **{active_yesterday}/{len(members)} ({active_yesterday / len(members) * 100:.1f}%)**
+
 🟢 Active last 7 days:
 **{active_last_7_days}/{len(members)} ({active_last_7_days / len(members) * 100:.1f}%)**
 
 📦 Total exp:
 **{total_exp_today:,}**
+
 📈 Today:
 **+{gain_today_total:,}**
+
 📅 Last 7 days:
 **+{gain_week_total:,}**
+
 📆 Current month:
 **+{gain_month_total:,}**
 
 
-{format_top3("🏆 Today TOP 3:", top_today)}
-{format_top3("🏆 Week TOP 3:", top_week)}
-{format_top3("🏆 Month TOP 3:", top_month)}
+{format_top3(
+    "🏆 Today TOP 3:",
+    top_today
+)}
+
+{format_top3(
+    "🏆 Week TOP 3:",
+    top_week
+)}
+
+{format_top3(
+    "🏆 Month TOP 3:",
+    top_month
+)}
 
 {guild_record_text}
+
 {individual_record_text}
 """
 
@@ -676,7 +760,6 @@ def main():
     send_discord(message)
 
     print("GUILD BOT END")
-
 
 
 # ======================
@@ -705,10 +788,12 @@ def send_discord(message):
                 timeout=15
             )
 
-            if r.status_code in [200, 204]:
+            if r.status_code in [
+                200,
+                204
+            ]:
 
                 return
-
 
         except Exception as e:
 
@@ -717,9 +802,7 @@ def send_discord(message):
                 e
             )
 
-
         time.sleep(3)
-
 
 
 if __name__ == "__main__":
