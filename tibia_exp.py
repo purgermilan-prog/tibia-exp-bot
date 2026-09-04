@@ -930,7 +930,7 @@ def main():
     elif level < previous_level:
 
         today_percent = (
-            f"💀 LVL DOWN "
+            f"💀 lvl 🔽  "
             f"({previous_level} → {level})"
         )
 
@@ -1028,7 +1028,7 @@ def main():
             )
 
             parts.append(
-                "LVL UP"
+                "🎇 lvl 🔼 "
             )
 
             # Przechodzimy na kolejny level
