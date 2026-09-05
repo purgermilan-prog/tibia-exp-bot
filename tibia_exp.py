@@ -1154,7 +1154,7 @@ def main():
 {"🎉 New 🏆 **PB!** 🎊" if is_pb else ""}
 📅 7 days: **+{format_exp(gain_week)}**
 📆 Month: **+{format_exp(gain_month)}**
-📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent} remaining)%**
+📉 Next LVL {level + 1}: **{format_exp(next_level_start - exp)} ({next_level_percent}% remaining)**
 
 🔥 Best: **+{format_exp(best)} ({best_date})**
 
