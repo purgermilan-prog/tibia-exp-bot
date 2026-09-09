@@ -310,6 +310,23 @@
       "level": 653,
       "rank": 575,
       "achievement_points": 805
+    },
+    {
+      "date": "2026-09-08",
+      "exp": 4619605048,
+      "level": 654,
+      "rank": 574,
+      "achievement_points": 805,
+      "deaths": [
+        {
+          "time": "2026-09-09T07:46:23Z",
+          "level": 654,
+          "killers": [
+            "hellspawn"
+          ],
+          "reason": "Died at Level 654 by hellspawn."
+        }
+      ]
     }
   ]
 }
