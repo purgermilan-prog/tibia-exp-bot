@@ -327,6 +327,13 @@
           "reason": "Died at Level 654 by hellspawn."
         }
       ]
+    },
+    {
+      "date": "2026-09-09",
+      "exp": 4605675880,
+      "level": 653,
+      "rank": 576,
+      "achievement_points": 805
     }
   ]
 }
