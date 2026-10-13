@@ -558,6 +558,23 @@
       "level": 664,
       "rank": 571,
       "achievement_points": 819
+    },
+    {
+      "date": "2026-10-12",
+      "exp": 4840843171,
+      "level": 664,
+      "rank": 571,
+      "achievement_points": 819,
+      "deaths": [
+        {
+          "time": "2026-10-13T02:53:06Z",
+          "level": 664,
+          "killers": [
+            "vexclaw"
+          ],
+          "reason": "Died at Level 664 by vexclaw."
+        }
+      ]
     }
   ]
 }
